@@ -1,9 +1,9 @@
 import express from 'express'
 import {
-    getAllManagers,
-    getManagerByName,
-    getManagerById,
-} from '../repositories/managers.repo.js'
+    getAllProjectManagers,
+    getProjectManagerByUsername,
+    getProjectManagerById,
+} from '../repositories/project-managers.repo.js'
 
 /**
  * Manager read-only routes.
@@ -21,7 +21,7 @@ const router = express.Router()
  */
 router.get('/managers', (req, res) => {
     try {
-        const result = getAllManagers(req.db)
+        const result = getAllProjectManagers(req.db)
         if (!result.ok) {
             const statusCode = result.error.startsWith('database error') ? 500 : 400;
             return res.status(statusCode).json(result)
@@ -41,7 +41,7 @@ router.get('/managers', (req, res) => {
 router.get('/manager/name/:name',(req, res) =>{
     const { name } = req.params
     try {
-        const result = getManagerByName(req.db, name)
+        const result = getProjectManagerByUsername(req.db, name)
         if (!result.ok) {
             const statusCode = result.error === 'manager not found'
                 ? 404
@@ -65,7 +65,7 @@ router.get('/manager/name/:name',(req, res) =>{
 router.get('/manager/id/:id', (req, res) => {
     const { id } = req.params
     try {
-        const result = getManagerById(req.db, id)
+        const result = getProjectManagerById(req.db, id)
         if (!result.ok) {
             const statusCode = result.error === 'manager not found'
                 ? 404

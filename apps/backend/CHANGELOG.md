@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-03-01
+
+### Added
+- Added canonical domain model and routes for `orders`, `projects_core`, row-based milestones, and milestone templates.
+- Added mold-specific operations source table (`operations_mold_planned_dates`) and mold operations field mapping helper.
+- Added enrichment service with provider registry and mold-only lookup/queue flow, plus repository/route/worker tests for the new architecture.
+
+### Changed
+- Replaced legacy project/manager/customer-facility schema and repository naming with canonical `project_managers`, `project_engineers`, `sales_managers`, and `customer_facilities` conventions.
+- Refactored project creation to seed milestones by template and return enrichment status (`enriched`, `queued`, `not_applicable`) based on project type.
+- Updated operations lookup queue worker/scripts and workspace scripts to canonical `operations-lookup-queue` naming.
+
+### Removed
+- Removed legacy project schema/repository/routes (`projects`) and old lookup queue naming artifacts.
+
 ## [0.7.0] - 2026-02-26
 
 ### Added

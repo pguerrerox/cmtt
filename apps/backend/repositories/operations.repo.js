@@ -1,12 +1,14 @@
-import operationsFields from '../helpers/_OPERATIONS_FIELDS.js'
+import operationsFields from '../helpers/_OPERATIONS_MOLDS_FIELDS.js'
+
+const OPERATIONS_TABLE = 'operations_mold_planned_dates'
 
 /**
  * Operations repository.
  *
- * Stores and fetches planned operations dates keyed by `project_number`.
+ * Stores and fetches mold planned operations dates keyed by `project_number`.
  */
 
-const allowedFields = ['project_number', ...operationsFields, 'source_version', 'refreshed_at']
+const allowedFields = ['order_number', 'project_type', 'project_number', ...operationsFields, 'source_version', 'refreshed_at']
 const integerDateFields = new Set([...operationsFields, 'refreshed_at'])
 
 const toEpochFromSlashDate = (value) => {
@@ -50,7 +52,7 @@ const toIntegerDate = (value) => {
 }
 
 /**
- * Inserts or updates an operations plan row by project number.
+     * Inserts or updates a mold operations plan row by project number.
  *
  * @param {import('better-sqlite3').Database} db - Shared SQLite connection.
  * @param {Record<string, unknown>} data - Operations payload with allowed fields.
@@ -103,7 +105,7 @@ export const upsert = (db, data) => {
         .join(', ')
 
     const sql = `
-        INSERT INTO operations_planned_dates (${columns.join(', ')})
+        INSERT INTO ${OPERATIONS_TABLE} (${columns.join(', ')})
         VALUES (${placeholders})
         ON CONFLICT(project_number) DO UPDATE SET ${updateClause};
     `
@@ -122,7 +124,7 @@ export const upsert = (db, data) => {
 }
 
 /**
- * Returns operations data for one project number.
+ * Returns mold operations data for one project number.
  *
  * @param {import('better-sqlite3').Database} db - Shared SQLite connection.
  * @param {string} project_number - Project identifier.
@@ -138,8 +140,68 @@ export const getOperationsPlanByProjectNumber = (db, project_number) => {
 
     try {
         const operation = db.prepare(`
-            SELECT * FROM operations_planned_dates WHERE project_number = ?;
+            SELECT * FROM ${OPERATIONS_TABLE} WHERE project_number = ?;
         `).get(project_number)
+
+        return operation
+            ? { ok: true, data: operation }
+            : { ok: false, error: 'operations plan not found' }
+    }
+    catch (err) {
+        return { ok: false, error: `database error: ${err.message}` }
+    }
+}
+
+/**
+ * Returns operations data using type-aware context.
+ *
+ * Lookup preference:
+ * 1) project_number + project_type + order_number
+ * 2) project_number + project_type
+ * 3) project_number
+ *
+ * @param {import('better-sqlite3').Database} db - Shared SQLite connection.
+ * @param {{ project_number: string, project_type?: number, order_number?: string }} context - Lookup context.
+ * @returns {{ ok: boolean, data?: unknown, error?: string }} Query result.
+ */
+export const getOperationsPlan = (db, context) => {
+    if (!context || typeof context !== 'object' || Array.isArray(context)) {
+        return { ok: false, error: 'invalid payload' }
+    }
+
+    const projectNumber = context.project_number
+    if (typeof projectNumber === 'string' && projectNumber.trim().length === 0) {
+        return { ok: false, error: 'project_number is required' }
+    }
+    if (!projectNumber) {
+        return { ok: false, error: 'project_number is required' }
+    }
+
+    try {
+        let operation = null
+        if (context.project_type !== undefined && context.order_number) {
+            operation = db.prepare(`
+                SELECT *
+                FROM ${OPERATIONS_TABLE}
+                WHERE project_number = ? AND project_type = ? AND order_number = ?
+            `).get(projectNumber, context.project_type, context.order_number)
+        }
+
+        if (!operation && context.project_type !== undefined) {
+            operation = db.prepare(`
+                SELECT *
+                FROM ${OPERATIONS_TABLE}
+                WHERE project_number = ? AND project_type = ?
+            `).get(projectNumber, context.project_type)
+        }
+
+        if (!operation) {
+            operation = db.prepare(`
+                SELECT *
+                FROM ${OPERATIONS_TABLE}
+                WHERE project_number = ?
+            `).get(projectNumber)
+        }
 
         return operation
             ? { ok: true, data: operation }

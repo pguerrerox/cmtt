@@ -23,20 +23,47 @@ export const createCustomer = (db, data) => {
         return { ok: false, error: 'name is required' }
     }
 
-    if (!hasValidForeignRow(db, 'salesmanagers', data.salesmanager_id)) {
-        return { ok: false, error: 'salesmanager not found' }
+    if (!data.headquarters_address || (typeof data.headquarters_address === 'string' && data.headquarters_address.trim().length === 0)) {
+        return { ok: false, error: 'headquarters_address is required' }
     }
 
-    if (!hasValidForeignRow(db, 'projecteng', data.projecteng_id)) {
+    if (!data.headquarter_contacts || (typeof data.headquarter_contacts === 'string' && data.headquarter_contacts.trim().length === 0)) {
+        return { ok: false, error: 'headquarter_contacts is required' }
+    }
+
+    if (data.project_manager_id === null || data.project_manager_id === undefined || data.project_manager_id === '') {
+        return { ok: false, error: 'project_manager_id is required' }
+    }
+
+    if (data.sales_manager_id === null || data.sales_manager_id === undefined || data.sales_manager_id === '') {
+        return { ok: false, error: 'sales_manager_id is required' }
+    }
+
+    if (data.project_engineer_id === null || data.project_engineer_id === undefined || data.project_engineer_id === '') {
+        return { ok: false, error: 'project_engineer_id is required' }
+    }
+
+    if (!hasValidForeignRow(db, 'project_managers', data.project_manager_id)) {
+        return { ok: false, error: 'project manager not found' }
+    }
+
+    if (!hasValidForeignRow(db, 'sales_managers', data.sales_manager_id)) {
+        return { ok: false, error: 'sales manager not found' }
+    }
+
+    if (!hasValidForeignRow(db, 'project_engineers', data.project_engineer_id)) {
         return { ok: false, error: 'project engineer not found' }
     }
 
-    const columns = keys.join(', ')
-    const placeholders = keys.map((key) => `:${key}`).join(', ')
+    const now = Date.now()
+    const payload = { ...data, created_at: now, updated_at: now }
+    const payloadKeys = Object.keys(payload)
+    const columns = payloadKeys.join(', ')
+    const placeholders = payloadKeys.map((key) => `:${key}`).join(', ')
 
     try {
         const stmt = db.prepare(`INSERT INTO customers (${columns}) VALUES (${placeholders})`)
-        stmt.run(data)
+        stmt.run(payload)
         return { ok: true, message: 'customer created' }
     } catch (err) {
         if (err.code && err.code.startsWith('SQLITE_CONSTRAINT')) {
@@ -59,19 +86,25 @@ export const updateCustomer = (db, id, data) => {
         return { ok: false, error: `invalid fields: ${droppedKeys.join(', ')}`, droppedKeys }
     }
 
-    if (data.salesmanager_id !== undefined && !hasValidForeignRow(db, 'salesmanagers', data.salesmanager_id)) {
-        return { ok: false, error: 'salesmanager not found' }
+    if (data.project_manager_id !== undefined && !hasValidForeignRow(db, 'project_managers', data.project_manager_id)) {
+        return { ok: false, error: 'project manager not found' }
     }
 
-    if (data.projecteng_id !== undefined && !hasValidForeignRow(db, 'projecteng', data.projecteng_id)) {
+    if (data.sales_manager_id !== undefined && !hasValidForeignRow(db, 'sales_managers', data.sales_manager_id)) {
+        return { ok: false, error: 'sales manager not found' }
+    }
+
+    if (data.project_engineer_id !== undefined && !hasValidForeignRow(db, 'project_engineers', data.project_engineer_id)) {
         return { ok: false, error: 'project engineer not found' }
     }
 
-    const setClause = keys.map((key) => `${key} = :${key}`).join(', ')
+    const payload = { ...data, updated_at: Date.now() }
+    const payloadKeys = Object.keys(payload)
+    const setClause = payloadKeys.map((key) => `${key} = :${key}`).join(', ')
 
     try {
         const stmt = db.prepare(`UPDATE customers SET ${setClause} WHERE id = :id`)
-        const info = stmt.run({ ...data, id })
+        const info = stmt.run({ ...payload, id })
         return info.changes > 0 ? { ok: true, message: 'customer updated' } : { ok: false, error: 'customer not found' }
     } catch (err) {
         if (err.code && err.code.startsWith('SQLITE_CONSTRAINT')) {
@@ -97,10 +130,15 @@ export const deleteCustomer = (db, id) => {
 export const getAllCustomers = (db) => {
     try {
         const data = db.prepare(`
-            SELECT customers.*, salesmanagers.name AS salesmanager_name, projecteng.name AS projecteng_name
+            SELECT
+                customers.*,
+                project_managers.fullname AS project_manager_name,
+                sales_managers.fullname AS sales_manager_name,
+                project_engineers.fullname AS project_engineer_name
             FROM customers
-            LEFT JOIN salesmanagers ON customers.salesmanager_id = salesmanagers.id
-            LEFT JOIN projecteng ON customers.projecteng_id = projecteng.id
+            LEFT JOIN project_managers ON customers.project_manager_id = project_managers.id
+            LEFT JOIN sales_managers ON customers.sales_manager_id = sales_managers.id
+            LEFT JOIN project_engineers ON customers.project_engineer_id = project_engineers.id
             ORDER BY customers.name ASC
         `).all()
         return { ok: true, data }
@@ -115,10 +153,15 @@ export const getCustomerById = (db, id) => {
 
     try {
         const data = db.prepare(`
-            SELECT customers.*, salesmanagers.name AS salesmanager_name, projecteng.name AS projecteng_name
+            SELECT
+                customers.*,
+                project_managers.fullname AS project_manager_name,
+                sales_managers.fullname AS sales_manager_name,
+                project_engineers.fullname AS project_engineer_name
             FROM customers
-            LEFT JOIN salesmanagers ON customers.salesmanager_id = salesmanagers.id
-            LEFT JOIN projecteng ON customers.projecteng_id = projecteng.id
+            LEFT JOIN project_managers ON customers.project_manager_id = project_managers.id
+            LEFT JOIN sales_managers ON customers.sales_manager_id = sales_managers.id
+            LEFT JOIN project_engineers ON customers.project_engineer_id = project_engineers.id
             WHERE customers.id = ?
         `).get(id)
         return data ? { ok: true, data } : { ok: false, error: 'customer not found' }

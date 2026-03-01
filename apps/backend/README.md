@@ -27,13 +27,13 @@ Create a `.env` file in `apps/backend`.
 ## Scripts
 - `npm run start` starts the API with `nodemon`.
 - `npm test` runs the test suite with Node's built-in test runner.
-- `npm run worker:projects-lookup` runs a single lookup-queue worker pass.
+- `npm run worker:operations-lookup-queue` runs a single operations lookup queue worker pass.
 - `npm run worker:operations-import` runs one operations-data import pass from the Excel source file.
 
 From repo root, use workspace wrappers:
 - `npm run dev:backend`
 - `npm run test:backend`
-- `npm run worker:projects-lookup`
+- `npm run worker:operations-lookup-queue`
 - `npm run operations:import`
 
 ## Operations Data Import
@@ -46,7 +46,7 @@ From repo root, use workspace wrappers:
 - The queue reconciliation runs as a one-shot worker command and should be triggered by an external scheduler.
 - Recommended trigger: OS cron, container cron, or platform scheduled job.
 - Example cron (every 15 minutes):
-  `*/15 * * * * cd /path/to/cmtt-monorepo && npm run worker:projects-lookup >> /var/log/cmtt-worker.log 2>&1`
+  `*/15 * * * * cd /path/to/cmtt-monorepo && npm run worker:operations-lookup-queue >> /var/log/cmtt-worker.log 2>&1`
 
 ## Changelog
 See `CHANGELOG.md`.

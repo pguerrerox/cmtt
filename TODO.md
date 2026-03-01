@@ -1,79 +1,138 @@
 # TODO
 
 ## P1
-- Overhaul of the Projects table, this approach follows a project's complete life cycle with in our project management processes.
-  this is a psaudo schema, need to translate to a real schema, these are all the columsn for the projects table.
-    - `id`: INTEGER PRIMARY KEY AUTOINCREMENT
-    - `status`: TEXT not null, default Internal, can be any of this: Ordered, Internal, Kicked, Packed, Shipped, Cancelled
-    - `project_number`: number UNIQUE NOT NULL, can only by a 6 digit number xxxxxx
-    - `project_description` TEXT
-    customer_name TEXT,
-  - Add column `type`: Machine | Auxiliaries | Mold | Refurb | Conversions.
-    manager_id INTEGER,
-    kickoff_date_planned INTEGER,
-    kickoff_date_act INTEGER,
-    mih_date_planned INTEGER,
-    mih_date_act INTEGER,
-    inspection_date_planned INTEGER,
-    inspection_date_act INTEGER,
-    process_planning_date_planned INTEGER,
-    process_planning_date_act INTEGER,
-    milton_date_planned INTEGER,
-    pih_date_planned INTEGER,
-    pih_date_act INTEGER,
-    mfg_date_planned INTEGER,
-    mfg_date_act INTEGER,
-    rih_date_planned INTEGER,
-    rih_date_act INTEGER,
-    hr_assy_date_planned INTEGER,
-    assy_date_planned INTEGER,
-    assy_date_act INTEGER,
-    test_date_planned INTEGER,
-    test_date_act INTEGER,
-    pp_recut_date_planned INTEGER,
-    pp_recut_date_act INTEGER,
-    recut_mfg_date_planned INTEGER,
-    post_recut_test_date_planned INTEGER,
-    dev_test_date_planned INTEGER,
-    machine_comt_date_planned INTEGER,
-    system_test_planned INTEGER,
-    system_test_act INTEGER,
-    ops_complete_date_planned INTEGER,
-    ship_date_planned INTEGER,
-    ship_date_act INTEGER,
-    status_notes TEXT,
-    FOREIGN KEY (manager_id) REFERENCES managers(id) ON DELETE SET NULL
+- Overhaul of the database structure as follows:
+  - table `orders` with the following columns
+    - `id` integer, primary key, autoincrement
+    - `type` integer, not null, can be 0=INTERNAL or 1=NORMAL
+    - `order_number` text, not null, unique, format is [abc][abc][0-9][0-9]-[0-9][0-9][0-9][0-9].
+    - `order_received_date` integer, not null
+    - `project_manager_id` integer, not null, fk -> project_managers.id
+    - `sales_manager_id` integer, not null, fk -> sales_managers.id
+    - `project_engineer_id` integer, not null, fk -> project_engineers.id
+    - `ship_to_facility_id` integer, not null, fk -> facility.id
+    - `customer_id` integer, not null, fk -> facility.customer_id
+    - `quote_ref` text, not null
+    - `po_ref` text
+    - `payment_terms` text, not mull
+    - `delivery_terms` text, not null
+    - `penalty` integer, can be 1 or 0
+    - `penalty_notes` text
+    - `created_at` integer, not null
+    - `updated_at` integer
 
+    - `snapshots` at creation of the sales_manager, project engineer, project manager, facility and customer
 
+  - table `projects_core`
+    - `id` integer, primary key, autoincrement
+    - `order_id` integer, not null
+    - `project_number` integer, not null, can only by a 6 digit number xxxxxx
+    - `project_description` text, not mull
+    - `type` integer, not null, can be 0=Machine, 1=Auxiliaries, 2=Mold
+    - `status` text, not null, default New, can be Ordered, Internal, Kicked, Packed, Shipped, Cancelled
+    - `credit_status` integer, can be 0='deposit pending', 1=pbs pending, 2=credit cleared 
+    - `sales_price` number
+    - `project_notes` text
+
+    contrains: one order can have multiple project types ex. machine, auxiliaries, and molds all with the same project number. Also an order can have multiple projects of the same type but these must have different project numbers ex. machine 1= project number 123123, machine 2= project number 123124.
+    required snapshots is any for audits.
+
+  - table `project_milestones` below are the requirements per project type
+    Machine
+      - `project_id` integer, fk -> project_core.id
+      - `pm_wbs_date` integer
+      - `pm_rto_date` integer
+      - `pm_checklist_received_date` integer
+      - `pm_checklist_submitted` integer
+      - `kickoff_date_act` integer,
+      - `pih_date_planned` integer,
+      - `pih_date_act` integer,
+      - `comt_date_planned` integer
+      - `comt_date_act` integer
+      - `test_date_planned` integer
+      - `test_date_act` integer
+      - `system_test_planned` integer
+      - `system_test_act` integer
+      - `customer_visit` integer
+      - `ops_complete_date_planned` integer
+      - `ship_date_planned` integer
+      - `ship_date_act` integer
+    Auxiliaries
+      - `project_id` integer, fk -> project_core.id
+      - `pm_wbs_date` integer
+      - `pm_rto_date` integer
+      - `pm_checklist_received_date` integer
+      - `pm_checklist_submitted` integer
+      - `kickoff_date_act` integer,
+      - `aux_purc_po_date` integer
+      - `aux_purc_exw_date_planned` integer
+      - `aux_purc_exw_date_act` integer
+    Molds
+      - `project_id` integer, fk -> project_core.id
+      - `pm_wbs_date` integer
+      - `pm_rto_date` integer
+      - `pm_psf_received_date` integer
+      - `pm_psf_submitted` integer
+      - `pm_korm` integer
+      - `pm_korm_date` integer
+      - `mih_date_planned` integer
+      - `mih_date_act` integer
+      - `inspection_date_planned` integer
+      - `inspection_date_act` integer
+      - `pih_date_planned` integer
+      - `pih_date_act` integer
+      - `mfg_date_planned` integer
+      - `mfg_date_act` integer
+      - `rih_date_planned` integer
+      - `rih_date_act` integer
+      - `hr_assy_date_planned` integer
+      - `assy_date_planned` integer
+      - `assy_date_act` integer
+      - `test_date_planned` integer
+      - `test_date_act` integer
+      - `pp_recut_date_planned` integer
+      - `pp_recut_date_act` integer
+      - `recut_mfg_date_planned` integer
+      - `post_recut_test_date_planned` integer
+      - `ops_complete_date_planned` integer
+      - `ship_date_planned` integer
+      - `ship_date_act` integer
+      snapshots and templates as required.
+
+  - table `project_managers`
+    - `id` integer, primary key, autoincrement
+    - `fullname` text, not null
+    - `username` text, not null
+    - `email` text, not null
+    - `role` text, not null, can be Team Leader, Senior Project Manager, Project Manager 
+    - `isActive` integer, 0 or 1
+    - `isAdmin` integer, 0 or 1
+    audit columns?
+
+  - table `sales_managers`
+    - `id` integer, primary key, autoincrement
+    - `fullname` text, not null
+    - `email` text, not null
+
+  - table `project_engineers`
+    - `id` integer, primary key, autoincrement
+    - `fullname` text, not null
+    - `email` text, not null
+
+  - table `customers`
+    - `id` integer, primary key, autoincrement
+    - `name` text, not null
+    - `headquaters_address` text, not null
+    - `headquarter_contacts` text, not null
+
+  - table `facilities`
+    - `id` integer, primary key, autoincrement
+    - `customer_id`, integer, not null, fk -> customers.id
+    - `plant_name` text, not null
+    - `plant_address` text, not null
+    - `plant_contacts` text, not null
 
 ## P
-- Create logic for `type`
-  - This column will be calculated from the projects description nomenclature using regexp. I think this should happen in one of two places; 1. During project creation the frontend will propose a type for the user to accept. 2. During the enrichtment process in the backend the submitted value must be validated and updated if found wrong (a feedback message should be raised to the frontend). 
-## P
-- Project Page required Information:
-  - General Info
-    - Status [Ordered | Internal | Kicked | Packed | Shipped | Cancelled]
-    - Project Number
-    - Description
-    - Customer Name
-    - Customer Facility (Contact & Ship to Address)
-  - Order Information
-    - Order Number
-    - Quote Number
-    - Sales Manager
-    - Project Engineer
-    - Payment Terms
-    - Delivery Terms
-    - Credit Status [Deposit Pending | Shipping Hold | Cleared]
-  - Action Triggers
-    - Need Freight Quote?
-    - Has MIH?
-    - Has RIH?
-    - Has CV?
-    - Has Samples For Approval?
-  - Links
-    - Link to PSF
-    - Link to SkyPERF
   - Milestones per project type
       - MOLD / COLD HALF: PIH - RIH - ASSY - TEST - CV - PACK - EXW    
       - HR: PIH - ASSY - PACK - EXW

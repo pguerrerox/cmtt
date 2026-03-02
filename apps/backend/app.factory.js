@@ -2,14 +2,17 @@ import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import admins from './routes/admin.routes.js'
-import adminSalesManagers from './routes/admin.salesmanagers.routes.js'
-import adminProjectEng from './routes/admin.projecteng.routes.js'
+import adminSalesManagers from './routes/admin.sales-managers.routes.js'
+import adminProjectEngineers from './routes/admin.project-engineers.routes.js'
 import managers from './routes/managers.routes.js'
-import projects from './routes/projects.routes.js'
-import salesManagers from './routes/salesmanagers.routes.js'
-import projectEng from './routes/projecteng.routes.js'
+import salesManagers from './routes/sales-managers.routes.js'
+import projectEngineers from './routes/project-engineers.routes.js'
 import customers from './routes/customers.routes.js'
-import facilities from './routes/facilities.routes.js'
+import customerFacilities from './routes/customer-facilities.routes.js'
+import orders from './routes/orders.routes.js'
+import projectsCore from './routes/projects-core.routes.js'
+import projectMilestones from './routes/project-milestones.routes.js'
+import projectMilestoneTemplates from './routes/project-milestone-templates.routes.js'
 
 /**
  * Creates and configures the Express application instance.
@@ -56,13 +59,16 @@ export default function createApp(db) {
         '/api',
         admins,
         adminSalesManagers,
-        adminProjectEng,
+        adminProjectEngineers,
         managers,
-        projects,
         salesManagers,
-        projectEng,
+        projectEngineers,
         customers,
-        facilities
+        customerFacilities,
+        orders,
+        projectsCore,
+        projectMilestones,
+        projectMilestoneTemplates
     )
 
     return app

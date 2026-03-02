@@ -1,23 +1,29 @@
 import Database from 'better-sqlite3'
-import managerSchema from '../../db/schema/manager.schema.js'
-import projectSchema from '../../db/schema/project.schema.js'
-import operationsSchema from '../../db/schema/operations.schema.js'
-import projectsLookupSchema from '../../db/schema/projectsLookup.schema.js'
-import salesmanagerSchema from '../../db/schema/salesmanager.schema.js'
-import projectEngSchema from '../../db/schema/projecteng.schema.js'
+import projectManagerSchema from '../../db/schema/project_manager.schema.js'
+import salesManagerSchema from '../../db/schema/sales_manager.schema.js'
+import projectEngineerSchema from '../../db/schema/project_engineer.schema.js'
+import operationsSchema from '../../db/schema/operations_molds.schema.js'
+import operationsLookupQueueSchema from '../../db/schema/operations_lookup_queue.schema.js'
 import customerSchema from '../../db/schema/customer.schema.js'
-import facilitySchema from '../../db/schema/facility.schema.js'
+import customerFacilitiesSchema from '../../db/schema/customer_facility.schema.js'
+import ordersSchema from '../../db/schema/order.schema.js'
+import projectsCoreSchema from '../../db/schema/project_core.schema.js'
+import projectMilestoneTemplateSchema from '../../db/schema/project_milestone_template.schema.js'
+import projectMilestoneSchema from '../../db/schema/project_milestone.schema.js'
 
 export function createTestDb() {
     const db = new Database(':memory:')
     db.pragma('foreign_keys = ON')
-    db.prepare(managerSchema).run()
-    db.prepare(projectSchema).run()
+    db.prepare(projectManagerSchema).run()
+    db.prepare(salesManagerSchema).run()
+    db.prepare(projectEngineerSchema).run()
     db.prepare(operationsSchema).run()
-    db.prepare(projectsLookupSchema).run()
-    db.prepare(salesmanagerSchema).run()
-    db.prepare(projectEngSchema).run()
+    db.prepare(operationsLookupQueueSchema).run()
     db.prepare(customerSchema).run()
-    db.prepare(facilitySchema).run()
+    db.prepare(customerFacilitiesSchema).run()
+    db.prepare(ordersSchema).run()
+    db.prepare(projectsCoreSchema).run()
+    db.prepare(projectMilestoneTemplateSchema).run()
+    db.prepare(projectMilestoneSchema).run()
     return db
 }

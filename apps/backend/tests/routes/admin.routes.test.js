@@ -36,7 +36,7 @@ test('POST /admin/createManager creates manager', () => {
         {
             db,
             body: {
-                name: 'jdoe',
+                username: 'jdoe',
                 fullname: 'John Doe',
                 email: 'john.doe@example.com',
                 role: 'Project Manager',
@@ -55,7 +55,7 @@ test('POST /admin/createManager returns 409 for duplicate manager', () => {
     const handler = getRouteHandler(adminRouter, 'post', '/admin/createManager')
     const db = createTestDb()
     const payload = {
-        name: 'jdoe',
+        username: 'jdoe',
         fullname: 'John Doe',
         email: 'john.doe@example.com',
         role: 'Project Manager',
@@ -83,7 +83,7 @@ test('POST /admin/createManager returns 400 for invalid role', () => {
         {
             db,
             body: {
-                name: 'invalidrole',
+                username: 'invalidrole',
                 fullname: 'Invalid Role',
                 email: 'invalid.role@example.com',
                 role: 'PM',

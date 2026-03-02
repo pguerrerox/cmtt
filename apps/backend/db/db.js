@@ -2,14 +2,17 @@ import dotenv from 'dotenv'
 import Database from 'better-sqlite3'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import managerSchema from './schema/manager.schema.js'
-import projectSchema from './schema/project.schema.js'
-import operationsSchema from './schema/operations.schema.js'
-import projectsLookupSchema from './schema/projectsLookup.schema.js'
-import salesmanagerSchema from './schema/salesmanager.schema.js'
-import projectEngSchema from './schema/projecteng.schema.js'
+import projectManagerSchema from './schema/project_manager.schema.js'
+import salesManagerSchema from './schema/sales_manager.schema.js'
+import projectEngineerSchema from './schema/project_engineer.schema.js'
+import operationsSchema from './schema/operations_molds.schema.js'
+import operationsLookupQueueSchema from './schema/operations_lookup_queue.schema.js'
 import customerSchema from './schema/customer.schema.js'
-import facilitySchema from './schema/facility.schema.js'
+import facilitySchema from './schema/customer_facility.schema.js'
+import ordersSchema from './schema/order.schema.js'
+import projectsCoreSchema from './schema/project_core.schema.js'
+import projectMilestoneTemplateSchema from './schema/project_milestone_template.schema.js'
+import projectMilestoneSchema from './schema/project_milestone.schema.js'
 
 /**
  * Database bootstrap module.
@@ -47,28 +50,37 @@ console.log(`DB-> Database is connected`)
 db.pragma('foreign_keys = ON');
 
 // Initialize SQLite tables using better-sqlite3
-db.prepare(managerSchema).run()
-console.log('DB-> Managers table initialized')
+db.prepare(projectManagerSchema).run()
+console.log('DB-> Project managers table initialized')
 
-db.prepare(projectSchema).run()
-console.log('DB-> Projects table initialized')
+db.prepare(salesManagerSchema).run()
+console.log('DB-> Sales managers table initialized')
+
+db.prepare(projectEngineerSchema).run()
+console.log('DB-> Project engineers table initialized')
 
 db.prepare(operationsSchema).run()
 console.log('DB-> Operations planned dates table initialized')
 
-db.prepare(projectsLookupSchema).run()
-console.log('DB-> Projects lookup queue table initialized')
-
-db.prepare(salesmanagerSchema).run()
-console.log('DB-> Sales managers table initialized')
-
-db.prepare(projectEngSchema).run()
-console.log('DB-> Project engineers table initialized')
+db.prepare(operationsLookupQueueSchema).run()
+console.log('DB-> Operations lookup queue table initialized')
 
 db.prepare(customerSchema).run()
 console.log('DB-> Customers table initialized')
 
 db.prepare(facilitySchema).run()
-console.log('DB-> Facilities table initialized')
+console.log('DB-> Customer facilities table initialized')
+
+db.prepare(ordersSchema).run()
+console.log('DB-> Orders table initialized')
+
+db.prepare(projectsCoreSchema).run()
+console.log('DB-> Projects core table initialized')
+
+db.prepare(projectMilestoneTemplateSchema).run()
+console.log('DB-> Project milestone templates table initialized')
+
+db.prepare(projectMilestoneSchema).run()
+console.log('DB-> Project milestones table initialized')
 
 export default db

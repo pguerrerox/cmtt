@@ -1,7 +1,7 @@
 {
   "name": "@cmtt/backend",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "API for this application",
   "keywords": [],
   "author": "Pedro Guerrero",
@@ -22,7 +22,7 @@
   "scripts": {
     "start": "nodemon ./app.js",
     "test": "node --test",
-    "worker:projects-lookup": "node ./workers/run-projects-lookup-once.js",
+    "worker:operations-lookup-queue": "node ./workers/run-operations-lookup-queue-once.js",
     "worker:operations-import": "node ./workers/run-operations-import-once.js"
   }
 }

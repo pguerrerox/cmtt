@@ -1,5 +1,5 @@
 import loadOperationsRows from '../helpers/excel_import/index.js'
-import operationsFields from '../helpers/_OPERATIONS_FIELDS.js'
+import operationsFields from '../helpers/_OPERATIONS_MOLDS_FIELDS.js'
 import { upsert as upsertOperationsPlan } from '../repositories/operations.repo.js'
 
 /**

@@ -1,12 +1,12 @@
 import express from 'express'
 import {
-    createManager,
-    updateManager,
-    deleteManager,
-    getAllManagers,
-    getManagerByName,
-    getManagerById
-} from '../repositories/managers.repo.js'
+    createProjectManager,
+    updateProjectManager,
+    deleteProjectManager,
+    getAllProjectManagers,
+    getProjectManagerByUsername,
+    getProjectManagerById
+} from '../repositories/project-managers.repo.js'
 
 /**
  * Admin manager routes.
@@ -25,7 +25,7 @@ const router = express.Router()
 router.post('/admin/createManager', (req, res) => {
     const { fullname } = req.body
     try {
-        const result = createManager(req.db, req.body);
+        const result = createProjectManager(req.db, req.body);
         if (!result.ok) {
             const statusCode = result.error === 'manager already exists'
                 ? 409
@@ -49,7 +49,7 @@ router.post('/admin/createManager', (req, res) => {
 router.patch('/admin/updateManager/:id', (req, res) => {
     const { id } = req.params
     try {
-        const result = updateManager(req.db, id, req.body);
+        const result = updateProjectManager(req.db, id, req.body);
         if (!result.ok) {
             const statusCode = result.error === 'manager not found'
                 ? 404
@@ -75,7 +75,7 @@ router.patch('/admin/updateManager/:id', (req, res) => {
 router.delete('/admin/deleteManager/:id', (req, res) => {
     const { id } = req.params;
     try {
-        const result = deleteManager(req.db, id);
+        const result = deleteProjectManager(req.db, id);
         if (!result.ok) {
             const statusCode = result.error === 'manager not found'
                 ? 404
@@ -98,7 +98,7 @@ router.delete('/admin/deleteManager/:id', (req, res) => {
  */
 router.get('/admin/managers', (req, res) => {
     try {
-        const result = getAllManagers(req.db);
+        const result = getAllProjectManagers(req.db);
         if (!result.ok) {
             const statusCode = result.error.startsWith('database error') ? 500 : 400;
             return res.status(statusCode).json(result)
@@ -117,7 +117,7 @@ router.get('/admin/managers', (req, res) => {
 router.get('/admin/manager/name/:name', (req, res) => {
     const { name } = req.params;
     try {
-        const result = getManagerByName(req.db, name)
+        const result = getProjectManagerByUsername(req.db, name)
         if (!result.ok) {
             const statusCode = result.error === 'manager not found'
                 ? 404
@@ -141,7 +141,7 @@ router.get('/admin/manager/name/:name', (req, res) => {
 router.get('/admin/manager/id/:id', (req, res) => {
     const { id } = req.params;
     try {
-        const result = getManagerById(req.db, id)
+        const result = getProjectManagerById(req.db, id)
         if (!result.ok) {
             const statusCode = result.error === 'manager not found'
                 ? 404

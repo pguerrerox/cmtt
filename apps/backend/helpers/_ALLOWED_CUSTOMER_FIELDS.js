@@ -5,8 +5,9 @@
  */
 export default [
     'name',
-    'country',
-    'salesmanager_id',
-    'projecteng_id',
-    'special_instructions'
+    'headquarters_address',
+    'headquarter_contacts',
+    'project_manager_id',
+    'sales_manager_id',
+    'project_engineer_id'
 ]

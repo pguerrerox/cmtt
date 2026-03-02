@@ -17,6 +17,7 @@ test('upsert inserts operations planned dates for a project', () => {
     })
 
     assert.equal(result.ok, true)
+    assert.equal(result.changed, true)
 
     const fetched = getOperationsPlanByProjectNumber(db, 'P-5000')
     assert.equal(fetched.ok, true)
@@ -40,6 +41,7 @@ test('upsert updates existing operations row by project_number', () => {
     })
 
     assert.equal(updated.ok, true)
+    assert.equal(updated.changed, true)
 
     const fetched = getOperationsPlanByProjectNumber(db, 'P-5001')
     assert.equal(fetched.data.ship_date_planned, 1775347200000)
@@ -57,6 +59,7 @@ test('upsert parses slash-formatted date strings from import data', () => {
     })
 
     assert.equal(result.ok, true)
+    assert.equal(result.changed, true)
 
     const fetched = getOperationsPlanByProjectNumber(db, 'P-5002')
     assert.equal(fetched.ok, true)
@@ -76,6 +79,7 @@ test('upsert stores null for invalid date strings', () => {
     })
 
     assert.equal(result.ok, true)
+    assert.equal(result.changed, true)
 
     const fetched = getOperationsPlanByProjectNumber(db, 'P-5003')
     assert.equal(fetched.ok, true)
@@ -87,4 +91,33 @@ test('getOperationsPlanByProjectNumber returns not found when missing', () => {
     const result = getOperationsPlanByProjectNumber(db, 'missing')
     assert.equal(result.ok, false)
     assert.equal(result.error, 'operations plan not found')
+})
+
+test('upsert reports unchanged when incoming data matches existing row', () => {
+    const db = createTestDb()
+
+    const first = upsert(db, {
+        project_number: 'P-5004',
+        project_type: 3,
+        ship_date_planned: 1763510400000,
+        source_version: 'v1',
+        refreshed_at: 1700000000000
+    })
+
+    const second = upsert(db, {
+        project_number: 'P-5004',
+        project_type: 3,
+        ship_date_planned: 1763510400000,
+        source_version: 'v1',
+        refreshed_at: 1800000000000
+    })
+
+    assert.equal(first.ok, true)
+    assert.equal(first.changed, true)
+    assert.equal(second.ok, true)
+    assert.equal(second.changed, false)
+
+    const fetched = getOperationsPlanByProjectNumber(db, 'P-5004')
+    assert.equal(fetched.ok, true)
+    assert.equal(fetched.data.refreshed_at, 1700000000000)
 })

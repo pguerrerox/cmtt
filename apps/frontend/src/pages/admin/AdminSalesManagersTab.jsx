@@ -7,10 +7,9 @@ import {
 } from '../../shared/api/salesManagers.js'
 
 const initialForm = {
-  name: '',
+  fullname: '',
   email: '',
-  telephone: '',
-  active: 1
+  isActive: 1
 }
 
 export default function AdminSalesManagersTab() {
@@ -65,15 +64,14 @@ export default function AdminSalesManagersTab() {
     setEditingId(row.id)
     setShowForm(true)
     setForm({
-      name: row.name ?? '',
+      fullname: row.fullname ?? '',
       email: row.email ?? '',
-      telephone: row.telephone ?? '',
-      active: row.active ? 1 : 0
+      isActive: row.isActive ? 1 : 0
     })
   }
 
   async function onDelete(row) {
-    if (!window.confirm(`Delete sales manager ${row.name}?`)) return
+    if (!window.confirm(`Delete sales manager ${row.fullname}?`)) return
     setStatus('')
     setError('')
     try {
@@ -100,8 +98,8 @@ export default function AdminSalesManagersTab() {
             Name
             <input
               required
-              value={form.name}
-              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+              value={form.fullname}
+              onChange={(event) => setForm((prev) => ({ ...prev, fullname: event.target.value }))}
             />
           </label>
 
@@ -114,19 +112,11 @@ export default function AdminSalesManagersTab() {
             />
           </label>
 
-          <label>
-            Telephone
-            <input
-              value={form.telephone}
-              onChange={(event) => setForm((prev) => ({ ...prev, telephone: event.target.value }))}
-            />
-          </label>
-
           <label className="checkbox">
             <input
               type="checkbox"
-              checked={Boolean(form.active)}
-              onChange={(event) => setForm((prev) => ({ ...prev, active: event.target.checked ? 1 : 0 }))}
+              checked={Boolean(form.isActive)}
+              onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked ? 1 : 0 }))}
             />
             Active
           </label>
@@ -151,11 +141,11 @@ export default function AdminSalesManagersTab() {
           {rows.map((row) => (
             <li key={row.id} className="entity-row">
               <div>
-                <strong>{row.name}</strong>
+                <strong>{row.fullname}</strong>
                 <p>{row.email || '-'}</p>
               </div>
-              <span>{row.telephone || '-'}</span>
-              <span>{row.active ? 'Active' : 'Inactive'}</span>
+              <span>{row.isActive ? 'Active' : 'Inactive'}</span>
+              <span />
               <div className="entity-actions">
                 <button type="button" className="ghost" onClick={() => onEdit(row)}>Edit</button>
                 <button type="button" className="ghost danger-text" onClick={() => onDelete(row)}>Delete</button>

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-03-02
+
+### Changed
+- Corrected operations import accounting so unchanged `project_number` records are counted as `skipped` instead of `imported`.
+- Updated operations upsert behavior to treat identical payloads as no-op updates and report row-change status to callers.
+- Aligned operations lookup and enrichment paths with the current mold operations schema by removing `order_number` dependency from operations table access.
+
+### Fixed
+- Fixed misleading `operations:import` summary output where repeated imports previously reported all rows as imported.
+
 ## [0.8.0] - 2026-03-01
 
 ### Added

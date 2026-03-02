@@ -6,15 +6,17 @@ import {
   getCustomers,
   updateCustomer
 } from '../../shared/api/customers.js'
+import { getManagersPublic } from '../../shared/api/managers.js'
 import { getProjectEngineers } from '../../shared/api/projectEngineers.js'
 import { getSalesManagers } from '../../shared/api/salesManagers.js'
 
 const initialForm = {
   name: '',
-  country: '',
-  salesmanager_id: '',
-  projecteng_id: '',
-  special_instructions: ''
+  headquarters_address: '',
+  headquarter_contacts: '',
+  project_manager_id: '',
+  sales_manager_id: '',
+  project_engineer_id: ''
 }
 
 function toNullableId(value) {
@@ -25,6 +27,7 @@ function toNullableId(value) {
 
 export default function AdminCustomersTab() {
   const [rows, setRows] = useState([])
+  const [projectManagers, setProjectManagers] = useState([])
   const [salesManagers, setSalesManagers] = useState([])
   const [projectEngineers, setProjectEngineers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,10 +38,12 @@ export default function AdminCustomersTab() {
   const [error, setError] = useState('')
 
   async function loadDependencies() {
-    const [salesResponse, engineerResponse] = await Promise.all([
+    const [managerResponse, salesResponse, engineerResponse] = await Promise.all([
+      getManagersPublic(),
       getSalesManagers(),
       getProjectEngineers()
     ])
+    setProjectManagers(managerResponse ?? [])
     setSalesManagers(salesResponse?.data ?? [])
     setProjectEngineers(engineerResponse?.data ?? [])
   }
@@ -78,10 +83,11 @@ export default function AdminCustomersTab() {
 
     const payload = {
       name: form.name,
-      country: form.country,
-      salesmanager_id: toNullableId(form.salesmanager_id),
-      projecteng_id: toNullableId(form.projecteng_id),
-      special_instructions: form.special_instructions
+      headquarters_address: form.headquarters_address,
+      headquarter_contacts: form.headquarter_contacts,
+      project_manager_id: toNullableId(form.project_manager_id),
+      sales_manager_id: toNullableId(form.sales_manager_id),
+      project_engineer_id: toNullableId(form.project_engineer_id)
     }
 
     try {
@@ -108,10 +114,11 @@ export default function AdminCustomersTab() {
     setError('')
     setForm({
       name: row.name ?? '',
-      country: row.country ?? '',
-      salesmanager_id: row.salesmanager_id ? String(row.salesmanager_id) : '',
-      projecteng_id: row.projecteng_id ? String(row.projecteng_id) : '',
-      special_instructions: row.special_instructions ?? ''
+      headquarters_address: row.headquarters_address ?? '',
+      headquarter_contacts: row.headquarter_contacts ?? '',
+      project_manager_id: row.project_manager_id ? String(row.project_manager_id) : '',
+      sales_manager_id: row.sales_manager_id ? String(row.sales_manager_id) : '',
+      project_engineer_id: row.project_engineer_id ? String(row.project_engineer_id) : ''
     })
   }
 
@@ -149,22 +156,47 @@ export default function AdminCustomersTab() {
           </label>
 
           <label>
-            Country
+            Headquarters Address
             <input
-              value={form.country}
-              onChange={(event) => setForm((prev) => ({ ...prev, country: event.target.value }))}
+              required
+              value={form.headquarters_address}
+              onChange={(event) => setForm((prev) => ({ ...prev, headquarters_address: event.target.value }))}
             />
+          </label>
+
+          <label>
+            Headquarters Contacts
+            <textarea
+              required
+              value={form.headquarter_contacts}
+              onChange={(event) => setForm((prev) => ({ ...prev, headquarter_contacts: event.target.value }))}
+            />
+          </label>
+
+          <label>
+            Project Manager
+            <select
+              required
+              value={form.project_manager_id}
+              onChange={(event) => setForm((prev) => ({ ...prev, project_manager_id: event.target.value }))}
+            >
+              <option value="">Select project manager...</option>
+              {projectManagers.map((item) => (
+                <option key={item.id} value={item.id}>{item.fullname}</option>
+              ))}
+            </select>
           </label>
 
           <label>
             Sales Manager
             <select
-              value={form.salesmanager_id}
-              onChange={(event) => setForm((prev) => ({ ...prev, salesmanager_id: event.target.value }))}
+              required
+              value={form.sales_manager_id}
+              onChange={(event) => setForm((prev) => ({ ...prev, sales_manager_id: event.target.value }))}
             >
-              <option value="">Not assigned</option>
+              <option value="">Select sales manager...</option>
               {salesManagers.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
+                <option key={item.id} value={item.id}>{item.fullname}</option>
               ))}
             </select>
           </label>
@@ -172,24 +204,15 @@ export default function AdminCustomersTab() {
           <label>
             Project Engineer
             <select
-              value={form.projecteng_id}
-              onChange={(event) => setForm((prev) => ({ ...prev, projecteng_id: event.target.value }))}
+              required
+              value={form.project_engineer_id}
+              onChange={(event) => setForm((prev) => ({ ...prev, project_engineer_id: event.target.value }))}
             >
-              <option value="">Not assigned</option>
+              <option value="">Select project engineer...</option>
               {projectEngineers.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
+                <option key={item.id} value={item.id}>{item.fullname}</option>
               ))}
             </select>
-          </label>
-
-          <label>
-            Special Instructions
-            <textarea
-              value={form.special_instructions}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, special_instructions: event.target.value }))
-              }
-            />
           </label>
 
           <button type="submit">{editingId ? 'Update Customer' : 'Save Customer'}</button>
@@ -213,10 +236,10 @@ export default function AdminCustomersTab() {
             <li key={row.id} className="entity-row">
               <Link to={`/admin/customers/${row.id}`} className="entity-link">
                 <strong>{row.name}</strong>
-                <p>{row.country || '-'}</p>
+                <p>{row.headquarters_address || '-'}</p>
               </Link>
-              <span>{row.salesmanager_name || '-'}</span>
-              <span>{row.projecteng_name || '-'}</span>
+              <span>{row.sales_manager_name || '-'}</span>
+              <span>{row.project_engineer_name || '-'}</span>
               <div className="entity-actions">
                 <button type="button" className="ghost" onClick={() => onEdit(row)}>Edit</button>
                 <button type="button" className="ghost danger-text" onClick={() => onDelete(row)}>Delete</button>

@@ -17,8 +17,7 @@ const operationsColumns = operationsFields
 export default `
 CREATE TABLE IF NOT EXISTS operations_mold_planned_dates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_number TEXT,
-    project_type INTEGER CHECK (project_type IN (1, 2, 3)),
+    project_type INTEGER DEFAULT 3,
     project_number TEXT UNIQUE NOT NULL,
     project_description TEXT,
     ${operationsColumns},

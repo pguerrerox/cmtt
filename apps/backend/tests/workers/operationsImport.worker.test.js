@@ -54,3 +54,36 @@ test('operations import worker returns error when loader fails', () => {
   assert.equal(result.errors.length, 1)
   assert.equal(result.errors[0], 'missing source file')
 })
+
+test('operations import worker counts unchanged rows as skipped', () => {
+  const db = createTestDb()
+  const loadRows = () => ([
+    {
+      project_number: 'P-8100',
+      kickoff_date_planned: '1760918400000',
+      ship_date_planned: '1763510400000'
+    }
+  ])
+
+  const firstRun = runOperationsImportWorker(db, {
+    sourceVersion: 'test-source',
+    refreshedAt: 1700000000000,
+    loadRows
+  })
+
+  const secondRun = runOperationsImportWorker(db, {
+    sourceVersion: 'test-source',
+    refreshedAt: 1800000000000,
+    loadRows
+  })
+
+  assert.equal(firstRun.ok, true)
+  assert.equal(firstRun.processed, 1)
+  assert.equal(firstRun.imported, 1)
+  assert.equal(firstRun.skipped, 0)
+
+  assert.equal(secondRun.ok, true)
+  assert.equal(secondRun.processed, 1)
+  assert.equal(secondRun.imported, 0)
+  assert.equal(secondRun.skipped, 1)
+})

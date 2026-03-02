@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-03-02
+
+### Added
+- Added soft admin access control in the app shell that hides admin navigation for non-admin managers and redirects blocked admin-route access with an access denied message.
+- Added manager-side order intake flow at `/orders/new` with a dedicated Create Order page and multi-line project creation in a single submission flow.
+- Added frontend order API module for posting order header data to `/api/orders`.
+
+### Changed
+- Migrated frontend API integration to canonical backend endpoints (`projects-core`, `orders`, `project-milestones`, `sales-managers`, `project-engineers`, and `customer-facilities`).
+- Updated manager/home project tables and project details/edit flows to use the new order-backed and milestone-row data model.
+- Updated admin customer, facility, sales manager, and project engineer forms to match current backend payload and response field names.
+- Updated admin manager list styling to gray out inactive manager rows.
+
 ## [0.5.0] - 2026-02-26
 
 ### Added

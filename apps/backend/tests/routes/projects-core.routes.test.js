@@ -102,7 +102,7 @@ test('POST /projects-core creates machine project', () => {
 test('POST /projects-core creates mold project with enrichment', () => {
     const db = createTestDb()
     const { orderId } = seedProjectContext(db)
-    upsertOperationsPlan(db, { order_number: 'EF56-111111', project_type: 3, project_number: '100002' })
+    upsertOperationsPlan(db, { project_type: 3, project_number: '100002' })
 
     const handler = getRouteHandler(projectsCoreRouter, 'post', '/projects-core')
     const res = createMockRes()

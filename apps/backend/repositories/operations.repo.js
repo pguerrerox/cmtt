@@ -8,7 +8,7 @@ const OPERATIONS_TABLE = 'operations_mold_planned_dates'
  * Stores and fetches mold planned operations dates keyed by `project_number`.
  */
 
-const allowedFields = ['order_number', 'project_type', 'project_number', ...operationsFields, 'source_version', 'refreshed_at']
+const allowedFields = ['project_type', 'project_number', ...operationsFields, 'source_version', 'refreshed_at']
 const integerDateFields = new Set([...operationsFields, 'refreshed_at'])
 
 const toEpochFromSlashDate = (value) => {
@@ -56,7 +56,7 @@ const toIntegerDate = (value) => {
  *
  * @param {import('better-sqlite3').Database} db - Shared SQLite connection.
  * @param {Record<string, unknown>} data - Operations payload with allowed fields.
- * @returns {{ ok: boolean, message?: string, error?: string, droppedKeys?: string[] }} Operation result.
+ * @returns {{ ok: boolean, changed?: boolean, message?: string, error?: string, droppedKeys?: string[] }} Operation result.
  */
 export const upsert = (db, data) => {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -103,16 +103,25 @@ export const upsert = (db, data) => {
         .filter((key) => key !== 'project_number')
         .map((key) => `${key} = excluded.${key}`)
         .join(', ')
+    const comparableColumns = columns.filter((key) => key !== 'project_number' && key !== 'refreshed_at')
+    const conflictWhereClause = comparableColumns.length > 0
+        ? comparableColumns.map((key) => `${key} IS NOT excluded.${key}`).join(' OR ')
+        : '0'
 
     const sql = `
         INSERT INTO ${OPERATIONS_TABLE} (${columns.join(', ')})
         VALUES (${placeholders})
-        ON CONFLICT(project_number) DO UPDATE SET ${updateClause};
+        ON CONFLICT(project_number) DO UPDATE SET ${updateClause}
+        WHERE ${conflictWhereClause};
     `
 
     try {
-        db.prepare(sql).run(payload)
-        return { ok: true, message: 'operations plan upserted' }
+        const runResult = db.prepare(sql).run(payload)
+        return {
+            ok: true,
+            changed: runResult.changes > 0,
+            message: runResult.changes > 0 ? 'operations plan upserted' : 'operations plan unchanged'
+        }
     }
     catch (err) {
         if (err.code && err.code.startsWith('SQLITE_CONSTRAINT')) {
@@ -156,12 +165,11 @@ export const getOperationsPlanByProjectNumber = (db, project_number) => {
  * Returns operations data using type-aware context.
  *
  * Lookup preference:
- * 1) project_number + project_type + order_number
- * 2) project_number + project_type
- * 3) project_number
+ * 1) project_number + project_type
+ * 2) project_number
  *
  * @param {import('better-sqlite3').Database} db - Shared SQLite connection.
- * @param {{ project_number: string, project_type?: number, order_number?: string }} context - Lookup context.
+ * @param {{ project_number: string, project_type?: number }} context - Lookup context.
  * @returns {{ ok: boolean, data?: unknown, error?: string }} Query result.
  */
 export const getOperationsPlan = (db, context) => {
@@ -179,15 +187,7 @@ export const getOperationsPlan = (db, context) => {
 
     try {
         let operation = null
-        if (context.project_type !== undefined && context.order_number) {
-            operation = db.prepare(`
-                SELECT *
-                FROM ${OPERATIONS_TABLE}
-                WHERE project_number = ? AND project_type = ? AND order_number = ?
-            `).get(projectNumber, context.project_type, context.order_number)
-        }
-
-        if (!operation && context.project_type !== undefined) {
+        if (context.project_type !== undefined) {
             operation = db.prepare(`
                 SELECT *
                 FROM ${OPERATIONS_TABLE}

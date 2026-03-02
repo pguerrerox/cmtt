@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getCustomerById, updateCustomer } from '../shared/api/customers.js'
 import { createFacility, deleteFacility, getFacilities, updateFacility } from '../shared/api/facilities.js'
+import { getManagersPublic } from '../shared/api/managers.js'
 import { getProjectEngineers } from '../shared/api/projectEngineers.js'
 import { getSalesManagers } from '../shared/api/salesManagers.js'
 
@@ -20,15 +21,17 @@ function toNullableId(value) {
 export default function AdminCustomerDetailsPage() {
   const { customerId } = useParams()
   const [customer, setCustomer] = useState(null)
+  const [projectManagers, setProjectManagers] = useState([])
   const [salesManagers, setSalesManagers] = useState([])
   const [projectEngineers, setProjectEngineers] = useState([])
   const [facilities, setFacilities] = useState([])
   const [customerForm, setCustomerForm] = useState({
     name: '',
-    country: '',
-    salesmanager_id: '',
-    projecteng_id: '',
-    special_instructions: ''
+    headquarters_address: '',
+    headquarter_contacts: '',
+    project_manager_id: '',
+    sales_manager_id: '',
+    project_engineer_id: ''
   })
   const [facilityForm, setFacilityForm] = useState(initialFacilityForm)
   const [editingFacilityId, setEditingFacilityId] = useState(null)
@@ -42,9 +45,10 @@ export default function AdminCustomerDetailsPage() {
     try {
       setLoading(true)
       setError('')
-      const [customerResponse, facilitiesResponse, salesResponse, engineersResponse] = await Promise.all([
+      const [customerResponse, facilitiesResponse, managersResponse, salesResponse, engineersResponse] = await Promise.all([
         getCustomerById(customerId),
         getFacilities(),
+        getManagersPublic(),
         getSalesManagers(),
         getProjectEngineers()
       ])
@@ -53,11 +57,13 @@ export default function AdminCustomerDetailsPage() {
       setCustomer(customerData)
       setCustomerForm({
         name: customerData?.name ?? '',
-        country: customerData?.country ?? '',
-        salesmanager_id: customerData?.salesmanager_id ? String(customerData.salesmanager_id) : '',
-        projecteng_id: customerData?.projecteng_id ? String(customerData.projecteng_id) : '',
-        special_instructions: customerData?.special_instructions ?? ''
+        headquarters_address: customerData?.headquarters_address ?? '',
+        headquarter_contacts: customerData?.headquarter_contacts ?? '',
+        project_manager_id: customerData?.project_manager_id ? String(customerData.project_manager_id) : '',
+        sales_manager_id: customerData?.sales_manager_id ? String(customerData.sales_manager_id) : '',
+        project_engineer_id: customerData?.project_engineer_id ? String(customerData.project_engineer_id) : ''
       })
+      setProjectManagers(managersResponse ?? [])
       setSalesManagers(salesResponse?.data ?? [])
       setProjectEngineers(engineersResponse?.data ?? [])
 
@@ -82,10 +88,11 @@ export default function AdminCustomerDetailsPage() {
     try {
       await updateCustomer(customerId, {
         name: customerForm.name,
-        country: customerForm.country,
-        salesmanager_id: toNullableId(customerForm.salesmanager_id),
-        projecteng_id: toNullableId(customerForm.projecteng_id),
-        special_instructions: customerForm.special_instructions
+        headquarters_address: customerForm.headquarters_address,
+        headquarter_contacts: customerForm.headquarter_contacts,
+        project_manager_id: toNullableId(customerForm.project_manager_id),
+        sales_manager_id: toNullableId(customerForm.sales_manager_id),
+        project_engineer_id: toNullableId(customerForm.project_engineer_id)
       })
       setStatus('Customer updated successfully.')
       await loadData()
@@ -174,24 +181,51 @@ export default function AdminCustomerDetailsPage() {
           </label>
 
           <label>
-            Country
+            Headquarters Address
             <input
-              value={customerForm.country}
-              onChange={(event) => setCustomerForm((prev) => ({ ...prev, country: event.target.value }))}
+              required
+              value={customerForm.headquarters_address}
+              onChange={(event) => setCustomerForm((prev) => ({ ...prev, headquarters_address: event.target.value }))}
             />
+          </label>
+
+          <label>
+            Headquarters Contacts
+            <textarea
+              required
+              value={customerForm.headquarter_contacts}
+              onChange={(event) => setCustomerForm((prev) => ({ ...prev, headquarter_contacts: event.target.value }))}
+            />
+          </label>
+
+          <label>
+            Project Manager
+            <select
+              required
+              value={customerForm.project_manager_id}
+              onChange={(event) =>
+                setCustomerForm((prev) => ({ ...prev, project_manager_id: event.target.value }))
+              }
+            >
+              <option value="">Select project manager...</option>
+              {projectManagers.map((item) => (
+                <option key={item.id} value={item.id}>{item.fullname}</option>
+              ))}
+            </select>
           </label>
 
           <label>
             Sales Manager
             <select
-              value={customerForm.salesmanager_id}
+              required
+              value={customerForm.sales_manager_id}
               onChange={(event) =>
-                setCustomerForm((prev) => ({ ...prev, salesmanager_id: event.target.value }))
+                setCustomerForm((prev) => ({ ...prev, sales_manager_id: event.target.value }))
               }
             >
-              <option value="">Not assigned</option>
+              <option value="">Select sales manager...</option>
               {salesManagers.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
+                <option key={item.id} value={item.id}>{item.fullname}</option>
               ))}
             </select>
           </label>
@@ -199,26 +233,17 @@ export default function AdminCustomerDetailsPage() {
           <label>
             Project Engineer
             <select
-              value={customerForm.projecteng_id}
+              required
+              value={customerForm.project_engineer_id}
               onChange={(event) =>
-                setCustomerForm((prev) => ({ ...prev, projecteng_id: event.target.value }))
+                setCustomerForm((prev) => ({ ...prev, project_engineer_id: event.target.value }))
               }
             >
-              <option value="">Not assigned</option>
+              <option value="">Select project engineer...</option>
               {projectEngineers.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
+                <option key={item.id} value={item.id}>{item.fullname}</option>
               ))}
             </select>
-          </label>
-
-          <label>
-            Special Instructions
-            <textarea
-              value={customerForm.special_instructions}
-              onChange={(event) =>
-                setCustomerForm((prev) => ({ ...prev, special_instructions: event.target.value }))
-              }
-            />
           </label>
 
           <button type="submit">Update Customer</button>

@@ -84,7 +84,6 @@ test('worker enriches due project and removes it from queue', () => {
     enqueueProject(db, '900000', { status: 'pending', project_type: 3, order_number: 'WK12-123456' })
 
     upsertOperationsPlan(db, {
-        order_number: 'WK12-123456',
         project_type: 3,
         project_number: '900000',
         kickoff_date_planned: 1760918400000,

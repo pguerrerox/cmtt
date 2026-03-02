@@ -236,7 +236,10 @@ export default function AdminManagersTab() {
             <strong className="manager-actions-header">Actions</strong>
           </li>
           {managers.map((manager) => (
-            <li key={manager.id} className="manager-row">
+            <li
+              key={manager.id}
+              className={`manager-row${manager.isActive ? '' : ' manager-row-inactive'}`}
+            >
               <strong>{manager.fullname}</strong>
               <span>@{manager.name}</span>
               <span>{manager.role}</span>

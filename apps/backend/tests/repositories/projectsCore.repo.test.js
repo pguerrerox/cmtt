@@ -94,7 +94,6 @@ test('projectsCore creates mold project and enriches when operations exist', () 
     const { orderId } = seedProjectDependencies(db)
 
     upsertOperationsPlan(db, {
-        order_number: 'GH78-100200',
         project_type: 3,
         project_number: '222222',
         source_version: 'v1'

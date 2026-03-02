@@ -5,8 +5,7 @@ export const moldProvider = {
     run(db, context) {
         const operationsResult = getOperationsPlan(db, {
             project_number: context.projectNumber,
-            project_type: context.projectType,
-            order_number: context.orderNumber
+            project_type: context.projectType
         })
 
         if (operationsResult.ok) {

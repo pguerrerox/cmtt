@@ -70,6 +70,11 @@ export const runOperationsImportWorker = (db, options = {}) => {
       continue
     }
 
+    if (result.changed === false) {
+      stats.skipped += 1
+      continue
+    }
+
     stats.imported += 1
   }
 

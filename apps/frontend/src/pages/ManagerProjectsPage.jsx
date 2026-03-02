@@ -99,7 +99,7 @@ export default function ManagerProjectsPage() {
         return compareProjectNumber(b.project_number, a.project_number)
       }
 
-      const dateSort = compareDeliveryDate(a.ship_date_planned, b.ship_date_planned)
+      const dateSort = compareDeliveryDate(a.updated_at, b.updated_at)
       return sortBy === SORT_OPTIONS.DELIVERY_OLD ? dateSort : -dateSort
     })
 
@@ -125,9 +125,14 @@ export default function ManagerProjectsPage() {
       <div className="panel">
         <div className="panel-header">
           <h3>{selectedManager.role === 'Team Leader' ? 'All Projects' : 'My Projects'}</h3>
-          <Link to="/projects/new" className="ghost as-link">
-            Create Project
-          </Link>
+          <div className="entity-actions">
+            <Link to="/orders/new" className="ghost as-link">
+              Create Order
+            </Link>
+            <Link to="/projects/new" className="ghost as-link">
+              Create Project
+            </Link>
+          </div>
         </div>
 
         <div className="inline-controls project-list-controls">
@@ -146,8 +151,8 @@ export default function ManagerProjectsPage() {
             <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
               <option value={SORT_OPTIONS.PROJECT_ASC}>Project Number (Asc)</option>
               <option value={SORT_OPTIONS.PROJECT_DESC}>Project Number (Desc)</option>
-              <option value={SORT_OPTIONS.DELIVERY_NEW}>Delivery Date (New)</option>
-              <option value={SORT_OPTIONS.DELIVERY_OLD}>Delivery Date (Old)</option>
+               <option value={SORT_OPTIONS.DELIVERY_NEW}>Last Updated (New)</option>
+               <option value={SORT_OPTIONS.DELIVERY_OLD}>Last Updated (Old)</option>
             </select>
           </label>
         </div>
@@ -167,8 +172,8 @@ export default function ManagerProjectsPage() {
                   <th>Project #</th>
                   <th>Description</th>
                   <th>Customer</th>
-                  <th>Kickoff (Actual)</th>
-                  <th>Delivery (Planned)</th>
+                   <th>Order #</th>
+                   <th>Last Updated</th>
                 </tr>
               </thead>
               <tbody>
@@ -189,10 +194,10 @@ export default function ManagerProjectsPage() {
                     </td>
                     <td>{project.project_description || '-'}</td>
                     <td>{project.customer_name || '-'}</td>
-                    <td>{formatEpochDate(project.kickoff_date_act)}</td>
-                    <td>{formatEpochDate(project.ship_date_planned)}</td>
-                  </tr>
-                ))}
+                     <td>{project.order_number || '-'}</td>
+                     <td>{formatEpochDate(project.updated_at)}</td>
+                   </tr>
+                 ))}
               </tbody>
             </table>
           </div>

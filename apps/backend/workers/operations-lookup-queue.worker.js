@@ -104,7 +104,6 @@ export const runOperationsLookupQueueWorker = (db, options = {}) => {
             stats.processed += 1
             const projectNumber = row.project_number
             const operationsResult = getOperationsPlan(db, {
-                order_number: row.order_number,
                 project_type: row.project_type,
                 project_number: projectNumber
             })

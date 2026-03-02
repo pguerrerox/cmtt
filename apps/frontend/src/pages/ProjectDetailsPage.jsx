@@ -1,120 +1,29 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getProjectByNumber, modifyProject } from '../shared/api/projects.js'
+import { getProjectByNumber, modifyProject, updateProjectMilestone } from '../shared/api/projects.js'
 import { dateInputToEpoch, epochToDateInput, formatEpochDate } from '../shared/date.js'
 
-const PROJECT_MILESTONES = [
-  {
-    label: 'Kickoff',
-    plannedKey: 'kickoff_date_planned',
-    actualKey: 'kickoff_date_act'
-  },
-  {
-    label: 'MIH',
-    plannedKey: 'mih_date_planned',
-    actualKey: 'mih_date_act'
-  },
-  {
-    label: 'Inspection',
-    plannedKey: 'inspection_date_planned',
-    actualKey: 'inspection_date_act'
-  },
-  {
-    label: 'Process Planning',
-    plannedKey: 'process_planning_date_planned',
-    actualKey: 'process_planning_date_act'
-  },
-  {
-    label: 'Milton',
-    plannedKey: 'milton_date_planned',
-    actualKey: null
-  },
-  {
-    label: 'PIH',
-    plannedKey: 'pih_date_planned',
-    actualKey: 'pih_date_act'
-  },
-  {
-    label: 'MFG',
-    plannedKey: 'mfg_date_planned',
-    actualKey: 'mfg_date_act'
-  },
-  {
-    label: 'RIH',
-    plannedKey: 'rih_date_planned',
-    actualKey: 'rih_date_act'
-  },
-  {
-    label: 'HR Assy',
-    plannedKey: 'hr_assy_date_planned',
-    actualKey: null
-  },
-  {
-    label: 'Assembly',
-    plannedKey: 'assy_date_planned',
-    actualKey: 'assy_date_act'
-  },
-  {
-    label: 'Test',
-    plannedKey: 'test_date_planned',
-    actualKey: 'test_date_act'
-  },
-  {
-    label: 'PP Recut',
-    plannedKey: 'pp_recut_date_planned',
-    actualKey: 'pp_recut_date_act'
-  },
-  {
-    label: 'Recut MFG',
-    plannedKey: 'recut_mfg_date_planned',
-    actualKey: null
-  },
-  {
-    label: 'Post Recut Test',
-    plannedKey: 'post_recut_test_date_planned',
-    actualKey: null
-  },
-  {
-    label: 'Dev Test',
-    plannedKey: 'dev_test_date_planned',
-    actualKey: null
-  },
-  {
-    label: 'Machine COMT',
-    plannedKey: 'machine_comt_date_planned',
-    actualKey: null
-  },
-  {
-    label: 'System Test',
-    plannedKey: 'system_test_planned',
-    actualKey: 'system_test_act'
-  },
-  {
-    label: 'OPS Complete',
-    plannedKey: 'ops_complete_date_planned',
-    actualKey: null
-  },
-  {
-    label: 'Ship',
-    plannedKey: 'ship_date_planned',
-    actualKey: 'ship_date_act'
-  }
-]
+const PROJECT_STATUS_OPTIONS = ['New', 'Ordered', 'Internal', 'Kicked', 'Packed', 'Shipped', 'Cancelled']
+const MILESTONE_STATUS_OPTIONS = ['pending', 'ready', 'in_progress', 'done', 'blocked', 'cancelled']
 
-const ACTUAL_DATE_KEYS = PROJECT_MILESTONES.filter((item) => item.actualKey).map((item) => item.actualKey)
-
-function buildForm(project) {
-  const nextForm = { status_notes: project?.status_notes ?? '' }
-  for (const key of ACTUAL_DATE_KEYS) {
-    nextForm[key] = epochToDateInput(project?.[key])
-  }
-  return nextForm
+function buildMilestoneForm(milestones) {
+  return Object.fromEntries(
+    milestones.map((milestone) => [
+      String(milestone.id),
+      {
+        actual_at: epochToDateInput(milestone.actual_at),
+        milestone_status: milestone.milestone_status ?? 'pending',
+        notes: milestone.notes ?? ''
+      }
+    ])
+  )
 }
 
 export default function ProjectDetailsPage() {
   const { projectNumber } = useParams()
   const [project, setProject] = useState(null)
-  const [form, setForm] = useState(() => buildForm(null))
+  const [projectForm, setProjectForm] = useState({ status: 'New', project_notes: '' })
+  const [milestoneForm, setMilestoneForm] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState('')
@@ -128,8 +37,14 @@ export default function ProjectDetailsPage() {
       setError('')
       const response = await getProjectByNumber(projectNumber)
       const projectData = response?.data
+      const milestones = projectData?.milestones ?? []
+
       setProject(projectData)
-      setForm(buildForm(projectData))
+      setProjectForm({
+        status: projectData?.status ?? 'New',
+        project_notes: projectData?.project_notes ?? ''
+      })
+      setMilestoneForm(buildMilestoneForm(milestones))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -143,20 +58,31 @@ export default function ProjectDetailsPage() {
 
   async function onSubmit(event) {
     event.preventDefault()
-    if (!project?.project_number) {
-      return
-    }
-
-    const payload = { status_notes: form.status_notes }
-    for (const key of ACTUAL_DATE_KEYS) {
-      payload[key] = dateInputToEpoch(form[key])
-    }
+    if (!project?.id) return
 
     try {
       setSaving(true)
       setStatus('')
       setError('')
-      await modifyProject(project.project_number, payload)
+
+      await modifyProject(project.id, {
+        status: projectForm.status,
+        project_notes: projectForm.project_notes
+      })
+
+      const milestoneUpdates = (project.milestones ?? []).map((milestone) => {
+        const formValues = milestoneForm[String(milestone.id)]
+        if (!formValues) return null
+
+        return updateProjectMilestone(milestone.id, {
+          actual_at: dateInputToEpoch(formValues.actual_at),
+          milestone_status: formValues.milestone_status,
+          notes: formValues.notes
+        })
+      }).filter(Boolean)
+
+      await Promise.all(milestoneUpdates)
+
       setStatus('Project updated successfully.')
       await loadProject()
     } catch (err) {
@@ -171,13 +97,13 @@ export default function ProjectDetailsPage() {
       <div className="panel hero compact">
         <p className="eyebrow">Project Details</p>
         <h2>{titleProjectNumber}</h2>
-        <p>Review planned dates and update actual milestone dates.</p>
+        <p>Review project core fields and update milestone progress.</p>
       </div>
 
       <div className="panel">
         <div className="panel-header">
           <h3>Project Overview</h3>
-          <Link to="/" className="ghost as-link">
+          <Link to="/manager" className="ghost as-link">
             Back
           </Link>
         </div>
@@ -191,6 +117,9 @@ export default function ProjectDetailsPage() {
               <strong>Project Number:</strong> {project.project_number}
             </p>
             <p>
+              <strong>Order Number:</strong> {project.order_number || '-'}
+            </p>
+            <p>
               <strong>Customer:</strong> {project.customer_name || '-'}
             </p>
             <p>
@@ -199,57 +128,120 @@ export default function ProjectDetailsPage() {
             <p>
               <strong>Description:</strong> {project.project_description || '-'}
             </p>
+            <p>
+              <strong>Type:</strong> {project.type || '-'}
+            </p>
           </div>
         )}
       </div>
 
       {!loading && !error && project && (
         <form className="panel project-details-form" onSubmit={onSubmit}>
+          <h3>Project Core</h3>
+
+          <label>
+            Status
+            <select
+              value={projectForm.status}
+              onChange={(event) => setProjectForm((prev) => ({ ...prev, status: event.target.value }))}
+            >
+              {PROJECT_STATUS_OPTIONS.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Project Notes
+            <textarea
+              value={projectForm.project_notes}
+              onChange={(event) => setProjectForm((prev) => ({ ...prev, project_notes: event.target.value }))}
+            />
+          </label>
+
           <h3>Milestones</h3>
 
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Milestone</th>
+                  <th>Code</th>
                   <th>Planned</th>
                   <th>Actual</th>
+                  <th>Status</th>
+                  <th>Notes</th>
                 </tr>
               </thead>
               <tbody>
-                {PROJECT_MILESTONES.map((item) => (
-                  <tr key={item.plannedKey}>
-                    <td>{item.label}</td>
-                    <td>{formatEpochDate(project[item.plannedKey])}</td>
-                    <td>
-                      {item.actualKey ? (
+                {(project.milestones ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="empty-row">No milestones found for this project.</td>
+                  </tr>
+                )}
+                {(project.milestones ?? []).map((milestone) => {
+                  const formValues = milestoneForm[String(milestone.id)] ?? {
+                    actual_at: '',
+                    milestone_status: 'pending',
+                    notes: ''
+                  }
+
+                  return (
+                    <tr key={milestone.id}>
+                      <td>{milestone.milestone_code}</td>
+                      <td>{formatEpochDate(milestone.planned_at)}</td>
+                      <td>
                         <input
                           type="date"
-                          value={form[item.actualKey]}
+                          value={formValues.actual_at}
                           onChange={(event) =>
-                            setForm((prev) => ({
+                            setMilestoneForm((prev) => ({
                               ...prev,
-                              [item.actualKey]: event.target.value
+                              [milestone.id]: {
+                                ...formValues,
+                                actual_at: event.target.value
+                              }
                             }))
                           }
                         />
-                      ) : (
-                        <span className="muted-cell">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        <select
+                          value={formValues.milestone_status}
+                          onChange={(event) =>
+                            setMilestoneForm((prev) => ({
+                              ...prev,
+                              [milestone.id]: {
+                                ...formValues,
+                                milestone_status: event.target.value
+                              }
+                            }))
+                          }
+                        >
+                          {MILESTONE_STATUS_OPTIONS.map((item) => (
+                            <option key={item} value={item}>{item}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          value={formValues.notes}
+                          onChange={(event) =>
+                            setMilestoneForm((prev) => ({
+                              ...prev,
+                              [milestone.id]: {
+                                ...formValues,
+                                notes: event.target.value
+                              }
+                            }))
+                          }
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
-
-          <label>
-            Status Notes
-            <textarea
-              value={form.status_notes}
-              onChange={(event) => setForm((prev) => ({ ...prev, status_notes: event.target.value }))}
-            />
-          </label>
 
           <button type="submit" disabled={saving}>
             {saving ? 'Updating...' : 'Update Project'}

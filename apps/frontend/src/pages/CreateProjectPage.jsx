@@ -1,33 +1,32 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { createProject } from '../shared/api/projects.js'
-import { getManagersPublic } from '../shared/api/managers.js'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { createProject, getOrders } from '../shared/api/projects.js'
 import { useSelectedManager } from '../state/selectedManager.context.jsx'
 
 const initialForm = {
+  order_id: '',
   project_number: '',
   project_description: '',
-  customer_name: '',
-  status_notes: ''
+  type: '1'
 }
 
 export default function CreateProjectPage() {
   const navigate = useNavigate()
-  const { selectedManager, setSelectedManager } = useSelectedManager()
+  const { selectedManager } = useSelectedManager()
 
-  const [managers, setManagers] = useState([])
+  const [orders, setOrders] = useState([])
   const [form, setForm] = useState(initialForm)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function loadManagers() {
+    async function loadOrders() {
       try {
         setLoading(true)
         setError('')
-        const data = await getManagersPublic()
-        setManagers(data)
+        const response = await getOrders()
+        setOrders(response?.data ?? [])
       } catch (err) {
         setError(err.message)
       } finally {
@@ -35,35 +34,34 @@ export default function CreateProjectPage() {
       }
     }
 
-    loadManagers()
+    loadOrders()
   }, [])
 
-  const managerById = useMemo(() => {
-    const map = new Map()
-    for (const manager of managers) {
-      map.set(String(manager.id), manager)
-    }
-    return map
-  }, [managers])
+  const visibleOrders = useMemo(() => {
+    if (!selectedManager) return []
+    if (selectedManager.role === 'Team Leader') return orders
+    return orders.filter((order) => String(order.project_manager_id) === String(selectedManager.id))
+  }, [orders, selectedManager])
+
+  if (!selectedManager?.id) {
+    return <Navigate to="/login" replace />
+  }
 
   async function onSubmit(event) {
     event.preventDefault()
     setError('')
     setStatus('')
 
-    if (!selectedManager?.id) {
-      setError('Select a manager before creating a project.')
-      return
-    }
-
     try {
       const result = await createProject({
-        ...form,
-        manager_id: selectedManager.id
+        order_id: Number(form.order_id),
+        project_number: form.project_number,
+        project_description: form.project_description,
+        type: Number(form.type)
       })
-      setStatus(`Project created (${result.lookup_status}). Redirecting to Home...`)
+      setStatus(`Project created (${result.lookup_status}). Redirecting to Manager view...`)
       setForm(initialForm)
-      setTimeout(() => navigate('/'), 1000)
+      setTimeout(() => navigate('/manager'), 1000)
     } catch (err) {
       setError(err.message)
     }
@@ -74,31 +72,28 @@ export default function CreateProjectPage() {
       <div className="panel hero compact">
         <p className="eyebrow">Project Intake</p>
         <h2>Create Project</h2>
-        <p>Planned dates are intentionally excluded. Backend enriches them from operations data.</p>
+        <p>Pick an order and create the project core record. Planned operations are enriched by backend workers.</p>
       </div>
 
       <form className="panel form-grid" onSubmit={onSubmit}>
         <div className="panel-header">
           <h3>New Project</h3>
-          <Link to="/" className="ghost as-link">
+          <Link to="/manager" className="ghost as-link">
             Back
           </Link>
         </div>
 
         <label>
-          Manager
+          Order
           <select
             required
-            value={selectedManager?.id ?? ''}
-            onChange={(event) => {
-              const selected = managerById.get(event.target.value)
-              setSelectedManager(selected ?? null)
-            }}
+            value={form.order_id}
+            onChange={(event) => setForm((prev) => ({ ...prev, order_id: event.target.value }))}
           >
-            <option value="">Select manager...</option>
-            {managers.map((manager) => (
-              <option key={manager.id} value={manager.id}>
-                {manager.fullname} ({manager.name})
+            <option value="">Select order...</option>
+            {visibleOrders.map((order) => (
+              <option key={order.id} value={order.id}>
+                {order.order_number} - {order.snapshot_customer_name || 'No customer'}
               </option>
             ))}
           </select>
@@ -116,17 +111,22 @@ export default function CreateProjectPage() {
         </label>
 
         <label>
-          Customer Name
-          <input
+          Project Type
+          <select
             required
-            value={form.customer_name}
-            onChange={(event) => setForm((prev) => ({ ...prev, customer_name: event.target.value }))}
-          />
+            value={form.type}
+            onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))}
+          >
+            <option value="1">Machine</option>
+            <option value="2">Auxiliary</option>
+            <option value="3">Mold</option>
+          </select>
         </label>
 
         <label>
           Project Description
           <textarea
+            required
             value={form.project_description}
             onChange={(event) =>
               setForm((prev) => ({ ...prev, project_description: event.target.value }))
@@ -134,18 +134,14 @@ export default function CreateProjectPage() {
           />
         </label>
 
-        <label>
-          Status Notes
-          <textarea
-            value={form.status_notes}
-            onChange={(event) => setForm((prev) => ({ ...prev, status_notes: event.target.value }))}
-          />
-        </label>
-
-        <button type="submit" disabled={loading || !selectedManager}>
+        <button type="submit" disabled={loading || visibleOrders.length === 0}>
           Create Project
         </button>
 
+        {loading && <p>Loading orders...</p>}
+        {!loading && visibleOrders.length === 0 && (
+          <p className="error">No available orders for this manager. Create an order first.</p>
+        )}
         {status && <p className="success">{status}</p>}
         {error && <p className="error">{error}</p>}
       </form>

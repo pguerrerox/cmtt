@@ -88,7 +88,7 @@ export default function HomePage() {
         return compareProjectNumber(b.project_number, a.project_number)
       }
 
-      const dateSort = compareDeliveryDate(a.ship_date_planned, b.ship_date_planned)
+      const dateSort = compareDeliveryDate(a.updated_at, b.updated_at)
       return sortBy === SORT_OPTIONS.DELIVERY_OLD ? dateSort : -dateSort
     })
 
@@ -107,7 +107,7 @@ export default function HomePage() {
 
       <div className="panel">
         <div className="panel-header">
-          <h3>All Projects</h3>
+           <h3>All Projects</h3>
         </div>
 
         <div className="inline-controls project-list-controls">
@@ -126,8 +126,8 @@ export default function HomePage() {
             <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
               <option value={SORT_OPTIONS.PROJECT_ASC}>Project Number (Asc)</option>
               <option value={SORT_OPTIONS.PROJECT_DESC}>Project Number (Desc)</option>
-              <option value={SORT_OPTIONS.DELIVERY_NEW}>Delivery Date (New)</option>
-              <option value={SORT_OPTIONS.DELIVERY_OLD}>Delivery Date (Old)</option>
+               <option value={SORT_OPTIONS.DELIVERY_NEW}>Last Updated (New)</option>
+               <option value={SORT_OPTIONS.DELIVERY_OLD}>Last Updated (Old)</option>
             </select>
           </label>
 
@@ -152,8 +152,8 @@ export default function HomePage() {
                   <th>Project Description</th>
                   <th>Customer</th>
                   <th>Manager</th>
-                  <th>Kickoff Date (Actual)</th>
-                  <th>Delivery Date (Planned)</th>
+                   <th>Order #</th>
+                   <th>Last Updated</th>
                 </tr>
               </thead>
               <tbody>
@@ -170,10 +170,10 @@ export default function HomePage() {
                     <td>{project.project_description || '-'}</td>
                     <td>{project.customer_name || '-'}</td>
                     <td>{project.manager_name || '-'}</td>
-                    <td>{formatEpochDate(project.kickoff_date_act)}</td>
-                    <td>{formatEpochDate(project.ship_date_planned)}</td>
-                  </tr>
-                ))}
+                     <td>{project.order_number || '-'}</td>
+                     <td>{formatEpochDate(project.updated_at)}</td>
+                   </tr>
+                 ))}
               </tbody>
             </table>
           </div>

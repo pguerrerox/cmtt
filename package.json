@@ -7,10 +7,10 @@
   ],
   "scripts": {
     "dev:backend": "npm run start --workspace @cmtt/backend",
+    "dev:frontend": "npm run dev --workspace @cmtt/frontend",
     "test:backend": "npm run test --workspace @cmtt/backend",
     "worker:operations-lookup-queue": "npm run worker:operations-lookup-queue --workspace @cmtt/backend",
     "operations:import": "npm run worker:operations-import --workspace @cmtt/backend",
-    "dev:frontend": "npm run dev --workspace @cmtt/frontend",
     "build:frontend": "npm run build --workspace @cmtt/frontend"
   }
 }

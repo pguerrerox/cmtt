@@ -490,12 +490,28 @@ thead th {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .create-order-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .form-grid .panel-header,
   .form-grid .success,
   .form-grid .error,
   .form-grid .role-group,
   .form-grid button {
     grid-column: span 2;
+  }
+
+  .create-order-grid .panel-header,
+  .create-order-grid .success,
+  .create-order-grid .error,
+  .create-order-grid button,
+  .create-order-grid .project-line-wrap {
+    grid-column: span 3;
+  }
+
+  .project-line-wrap {
+    grid-column: span 3;
   }
 }
 

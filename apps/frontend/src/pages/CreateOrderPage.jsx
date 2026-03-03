@@ -18,7 +18,7 @@ function createEmptyLine() {
 }
 
 const initialOrderForm = {
-  type: '1',
+  type: '0',
   order_number: '',
   order_received_date: '',
   project_manager_id: '',
@@ -200,7 +200,7 @@ export default function CreateOrderPage() {
         <p>Create one order and add multiple project lines to it.</p>
       </div>
 
-      <form className="panel form-grid" onSubmit={onSubmit}>
+      <form className="panel form-grid create-order-grid" onSubmit={onSubmit}>
         <div className="panel-header">
           <h3>Order Header</h3>
           <Link to="/manager" className="ghost as-link">Back</Link>
@@ -213,8 +213,8 @@ export default function CreateOrderPage() {
             value={orderForm.type}
             onChange={(event) => setOrderForm((prev) => ({ ...prev, type: event.target.value }))}
           >
-            <option value="0">Type 0</option>
-            <option value="1">Type 1</option>
+            <option value="0">Normal</option>
+            <option value="1">Internal</option>
           </select>
         </label>
 
@@ -222,7 +222,7 @@ export default function CreateOrderPage() {
           Order Number
           <input
             required
-            placeholder="AB12-123456"
+            placeholder="US01-123456"
             value={orderForm.order_number}
             onChange={(event) => setOrderForm((prev) => ({ ...prev, order_number: event.target.value }))}
           />
@@ -306,7 +306,7 @@ export default function CreateOrderPage() {
         </label>
 
         <label>
-          Quote Ref
+          Quote No.
           <input
             required
             value={orderForm.quote_ref}
@@ -315,7 +315,7 @@ export default function CreateOrderPage() {
         </label>
 
         <label>
-          PO Ref
+          Purchace Order No.
           <input
             value={orderForm.po_ref}
             onChange={(event) => setOrderForm((prev) => ({ ...prev, po_ref: event.target.value }))}
@@ -352,77 +352,80 @@ export default function CreateOrderPage() {
               }))
             }
           />
-          Penalty
+          Penalties
         </label>
 
-        <label>
-          Penalty Notes
-          <textarea
-            disabled={!orderForm.penalty}
-            value={orderForm.penalty_notes}
-            onChange={(event) => setOrderForm((prev) => ({ ...prev, penalty_notes: event.target.value }))}
-          />
-        </label>
-
-        <div className="panel-header">
-          <h3>Project Lines</h3>
-          <button type="button" className="ghost" onClick={() => setProjectLines((prev) => [...prev, createEmptyLine()])}>
-            Add Line
-          </button>
-        </div>
+        {Boolean(orderForm.penalty) && (
+          <label>
+            Penalties Notes
+            <textarea
+              value={orderForm.penalty_notes}
+              onChange={(event) => setOrderForm((prev) => ({ ...prev, penalty_notes: event.target.value }))}
+            />
+          </label>
+        )}
+        
+        <div className='project-line-wrap'>
+          <div className="panel-header">
+            <h3>Project Lines</h3>
+            <button type="button" className="ghost" onClick={() => setProjectLines((prev) => [...prev, createEmptyLine()])}>
+              Add Line
+            </button>
+          </div>
 
         <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Project #</th>
-                <th>Description</th>
-                <th>Type</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {projectLines.map((line) => (
-                <tr key={line.lineId}>
-                  <td>
-                    <input
-                      required
-                      placeholder="123456"
-                      value={line.project_number}
-                      onChange={(event) =>
-                        updateLine(line.lineId, { project_number: event.target.value.replace(/\D/g, '').slice(0, 6) })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      required
-                      value={line.project_description}
-                      onChange={(event) =>
-                        updateLine(line.lineId, { project_description: event.target.value })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <select
-                      required
-                      value={line.type}
-                      onChange={(event) => updateLine(line.lineId, { type: event.target.value })}
-                    >
-                      <option value="1">Machine</option>
-                      <option value="2">Auxiliary</option>
-                      <option value="3">Mold</option>
-                    </select>
-                  </td>
-                  <td>
-                    <button type="button" className="ghost" onClick={() => removeLine(line.lineId)}>
-                      Remove
-                    </button>
-                  </td>
+            <table>
+              <thead>
+                <tr>
+                  <th>Project #</th>
+                  <th>Description</th>
+                  <th>Type</th>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {projectLines.map((line) => (
+                  <tr key={line.lineId}>
+                    <td>
+                      <input
+                        required
+                        placeholder="123456"
+                        value={line.project_number}
+                        onChange={(event) =>
+                          updateLine(line.lineId, { project_number: event.target.value.replace(/\D/g, '').slice(0, 6) })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        required
+                        value={line.project_description}
+                        onChange={(event) =>
+                          updateLine(line.lineId, { project_description: event.target.value })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <select
+                        required
+                        value={line.type}
+                        onChange={(event) => updateLine(line.lineId, { type: event.target.value })}
+                      >
+                        <option value="1">Machine</option>
+                        <option value="2">Auxiliary</option>
+                        <option value="3">Mold</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button type="button" className="ghost" onClick={() => removeLine(line.lineId)}>
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <button type="submit" disabled={loading || submitting || !orderForm.project_manager_id}>

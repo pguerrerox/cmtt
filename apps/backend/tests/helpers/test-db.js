@@ -10,6 +10,8 @@ import ordersSchema from '../../db/schema/order.schema.js'
 import projectsCoreSchema from '../../db/schema/project_core.schema.js'
 import projectMilestoneTemplateSchema from '../../db/schema/project_milestone_template.schema.js'
 import projectMilestoneSchema from '../../db/schema/project_milestone.schema.js'
+import psfScanJobsSchema from '../../db/schema/psf_scan_jobs.schema.js'
+import psfScanResultsSchema from '../../db/schema/psf_scan_results.schema.js'
 
 export function createTestDb() {
     const db = new Database(':memory:')
@@ -25,5 +27,7 @@ export function createTestDb() {
     db.prepare(projectsCoreSchema).run()
     db.prepare(projectMilestoneTemplateSchema).run()
     db.prepare(projectMilestoneSchema).run()
+    db.prepare(psfScanJobsSchema).run()
+    db.prepare(psfScanResultsSchema).run()
     return db
 }

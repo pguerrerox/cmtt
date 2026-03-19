@@ -24,6 +24,10 @@ Base path: `/api`
 - `GET /projects/customer/:customer_name`
 - `GET /projects/:project_number`
 
+## PSF Scanner
+- `POST /psf/scan` (multipart upload; field name `psf`)
+- `POST /psf/commit` (JSON draft commit)
+
 ## Notes
 - Typical response codes: `200`, `201`, `400`, `404`, `409`, `500`.
 - `createProject` returns `lookup_status` indicating immediate enrichment or queueing.
@@ -31,3 +35,4 @@ Base path: `/api`
 - Manager role values are constrained to: `Team Leader`, `Senior Project Manager`, `Project Manager`, `Guest`.
 - Operations enrichment depends on running `npm run operations:import` to refresh `operations_planned_dates` from the Excel source.
 - Auth and API versioning strategy should be defined before production rollout.
+- PSF scanner uses a two-step flow: scan/review first, commit second.

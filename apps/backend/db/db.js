@@ -13,6 +13,8 @@ import ordersSchema from './schema/order.schema.js'
 import projectsCoreSchema from './schema/project_core.schema.js'
 import projectMilestoneTemplateSchema from './schema/project_milestone_template.schema.js'
 import projectMilestoneSchema from './schema/project_milestone.schema.js'
+import psfScanJobsSchema from './schema/psf_scan_jobs.schema.js'
+import psfScanResultsSchema from './schema/psf_scan_results.schema.js'
 
 /**
  * Database bootstrap module.
@@ -82,5 +84,11 @@ console.log('DB-> Project milestone templates table initialized')
 
 db.prepare(projectMilestoneSchema).run()
 console.log('DB-> Project milestones table initialized')
+
+db.prepare(psfScanJobsSchema).run()
+console.log('DB-> PSF scan jobs table initialized')
+
+db.prepare(psfScanResultsSchema).run()
+console.log('DB-> PSF scan results table initialized')
 
 export default db

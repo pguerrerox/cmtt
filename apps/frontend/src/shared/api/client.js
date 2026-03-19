@@ -1,9 +1,12 @@
 import { API_BASE_URL } from '../config.js'
 
 async function request(path, options = {}) {
+  const isFormData = options.body instanceof FormData
+  const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
-      'Content-Type': 'application/json',
+      ...defaultHeaders,
       ...(options.headers ?? {})
     },
     ...options

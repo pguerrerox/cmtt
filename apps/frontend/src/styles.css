@@ -262,6 +262,13 @@ button:disabled {
   gap: 0.35rem;
 }
 
+.manager-project-actions {
+  margin-top: 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .danger-text {
   color: #b32424;
 }

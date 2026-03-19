@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-03-19
+
+### Changed
+- Updated the Manager Projects page (`/manager`) so `Create Order` and `Create Project` now render on a dedicated row directly below the `My Projects` heading.
+- Updated the `/manager` action links to reuse the admin pill-button visual style for consistent cross-page action affordances.
+- Refined Home page hero and section heading copy hierarchy on `/` for a clearer project operations overview.
+
 ## [0.6.0] - 2026-03-02
 
 ### Added

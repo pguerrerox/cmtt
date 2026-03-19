@@ -99,15 +99,15 @@ export default function HomePage() {
     <section className="stack gap-lg">
       <div className="panel hero">
         <div>
-          <p className="eyebrow">Project Operations</p>
-          <h2>Commitment Managers Tracker</h2>
-          <p>Track all projects and monitor kickoff and delivery milestones.</p>
+          <p className="eyebrow">Project Management</p>
+          <h1>Commitment Manager OS</h1>
+          <p>Track all order and projects. Monitor kickoff and delivery milestones.</p>
         </div>
       </div>
 
       <div className="panel">
         <div className="panel-header">
-           <h3>All Projects</h3>
+           <h2>All Projects</h2>
         </div>
 
         <div className="inline-controls project-list-controls">

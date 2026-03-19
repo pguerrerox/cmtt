@@ -125,14 +125,15 @@ export default function ManagerProjectsPage() {
       <div className="panel">
         <div className="panel-header">
           <h3>{selectedManager.role === 'Team Leader' ? 'All Projects' : 'My Projects'}</h3>
-          <div className="entity-actions">
-            <Link to="/orders/new" className="ghost as-link">
-              Create Order
-            </Link>
-            <Link to="/projects/new" className="ghost as-link">
-              Create Project
-            </Link>
-          </div>
+        </div>
+
+        <div className="manager-project-actions" aria-label="Project actions">
+          <Link to="/orders/new" className="admin-tab-link">
+            Create Order
+          </Link>
+          <Link to="/projects/new" className="admin-tab-link">
+            Create Project
+          </Link>
         </div>
 
         <div className="inline-controls project-list-controls">

@@ -148,6 +148,11 @@ export function commitPdfDraft(db, payload, options = {}) {
     }
 
     const canonicalDraft = validation.data
+    const acceptedLines = canonicalDraft.projects.filter((line) => line.accepted !== false)
+    if (acceptedLines.length === 0) {
+        return { ok: false, error: 'at least one accepted project line is required' }
+    }
+
     const existingCommit = findExistingCommitByOrderNumber(db, canonicalDraft.order.order_number)
     if (existingCommit) {
         if (scanJobId) {
@@ -173,12 +178,13 @@ export function commitPdfDraft(db, payload, options = {}) {
 
         const projectIds = []
         const lookupStatuses = []
-        for (const line of canonicalDraft.projects) {
+        for (const line of acceptedLines) {
             const projectResult = createProjectCore(db, {
                 order_id: orderResult.id,
                 project_number: line.project_number,
                 project_description: line.project_description,
-                type: line.type
+                type: line.type,
+                sales_price: Number.isInteger(line.sales_price) ? line.sales_price : null
             }, actor)
 
             if (!projectResult.ok) throw new Error(projectResult.error)

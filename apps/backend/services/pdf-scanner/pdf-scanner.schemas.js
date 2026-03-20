@@ -20,7 +20,9 @@ const pdfOrderSchema = z.object({
 const pdfProjectLineSchema = z.object({
     project_number: z.string().regex(/^\d{6}$/),
     project_description: z.string().min(1),
-    type: z.number().int().min(1).max(3)
+    type: z.number().int().min(1).max(3),
+    sales_price: z.number().int().min(0).nullable().optional().default(null),
+    accepted: z.boolean().optional().default(true)
 })
 
 export const pdfScanDraftSchema = z.object({

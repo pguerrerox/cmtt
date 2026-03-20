@@ -102,8 +102,8 @@ function buildDraft(context, orderNumber = 'PS12-123456') {
             penalty_notes: null
         },
         projects: [
-            { project_number: '654321', project_description: 'PDF machine line', type: 1 },
-            { project_number: '654322', project_description: 'PDF mold line', type: 3 }
+            { project_number: '654321', project_description: 'PDF machine line', type: 1, sales_price: 100000, accepted: true },
+            { project_number: '654322', project_description: 'PDF mold line', type: 3, sales_price: 250050, accepted: true }
         ],
         metadata: {
             source: 'pdf',
@@ -169,4 +169,15 @@ test('commitPdfDraft fails on invalid editable draft', () => {
     assert.equal(result.ok, false)
     assert.equal(result.error, 'invalid pdf draft')
     assert.equal(result.issues.some((line) => line.includes('order.order_number')), true)
+})
+
+test('commitPdfDraft rejects drafts with no accepted lines', () => {
+    const db = createTestDb()
+    const context = seedActorsAndCustomerContext(db)
+    const draft = buildDraft(context, 'PS99-111111')
+    draft.projects = draft.projects.map((line) => ({ ...line, accepted: false }))
+
+    const result = commitPdfDraft(db, { draft }, { actor: 'scanner' })
+    assert.equal(result.ok, false)
+    assert.equal(result.error, 'at least one accepted project line is required')
 })

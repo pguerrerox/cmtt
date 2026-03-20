@@ -44,16 +44,16 @@ function extractLabel(lines, patterns) {
     return ''
 }
 
+function extractByRegex(text, pattern) {
+    const match = text.match(pattern)
+    return match?.[1] ? normalizeWhitespace(match[1]) : ''
+}
+
 function parseProjectType(value) {
     const normalized = normalizeWhitespace(value).toLowerCase()
     if (!normalized) return null
     if (/^[123]$/.test(normalized)) return Number(normalized)
     return TYPE_MAP[normalized] ?? null
-}
-
-function extractByRegex(text, pattern) {
-    const match = text.match(pattern)
-    return match?.[1] ? normalizeWhitespace(match[1]) : ''
 }
 
 function inferProjectTypeFromDescription(value) {
@@ -67,13 +67,17 @@ function inferProjectTypeFromDescription(value) {
 function cleanProjectDescription(value) {
     const normalized = normalizeWhitespace(value)
     if (!normalized) return ''
+
     const stopMarkers = [
         ' REGIONAL CREDITS',
         ' PROJECT MANAGER',
         ' LINE OF BUSINESS',
         ' PLACE OF DELIVERY',
         ' DELIVERY TERMS',
-        ' CREATED DATE'
+        ' CREATED DATE',
+        ' SUBMIT SHIPPING',
+        ' HOLD',
+        ' OPN:'
     ]
 
     let cut = normalized.length
@@ -83,45 +87,135 @@ function cleanProjectDescription(value) {
         if (index >= 0 && index < cut) cut = index
     }
 
-    return normalizeWhitespace(normalized.slice(0, cut))
+    let cleaned = normalizeWhitespace(normalized.slice(0, cut))
+    const firstMoneyIndex = cleaned.search(/\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b/)
+    if (firstMoneyIndex >= 0) {
+        cleaned = cleaned.slice(0, firstMoneyIndex)
+    }
+    cleaned = cleaned.replace(/\s+\d{1,3}(?:,\d{3})+(?:\.\d+)?(\s+\d{1,3}(?:,\d{3})+(?:\.\d+)?)*\s*$/g, '')
+    return normalizeWhitespace(cleaned)
 }
 
-function extractProjectLines(lines) {
-    const rows = []
-    const linePattern = /^(\d{6})\s+(.+?)\s+(Machine|Auxiliary|Aux|Mold|Mould|[123])$/i
+function parseMoneyToCents(value) {
+    const text = normalizeWhitespace(value)
+    if (!text) return null
 
-    for (const line of lines) {
-        const match = line.match(linePattern)
-        if (!match) continue
-        const type = parseProjectType(match[3])
-        if (!type) continue
-        rows.push({
-            project_number: match[1],
-            project_description: normalizeWhitespace(match[2]),
-            type
-        })
+    const numeric = text.replace(/,/g, '')
+    if (!/^\d+(?:\.\d{1,2})?$/.test(numeric)) return null
+
+    const parts = numeric.split('.')
+    const whole = Number(parts[0])
+    const cents = parts[1] ? Number(parts[1].padEnd(2, '0')) : 0
+    return whole * 100 + cents
+}
+
+function parseSalesPriceCents(rowText) {
+    const amounts = rowText.match(/\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b/g) ?? []
+    if (amounts.length === 0) return null
+    const salesPriceToken = amounts[1] ?? amounts[0]
+    return parseMoneyToCents(salesPriceToken)
+}
+
+function isNoiseLine(value) {
+    const text = normalizeWhitespace(value)
+    if (!text) return true
+    return (
+        /^Page\s+\d+\s+of\s+\d+$/i.test(text)
+        || /^\d{2}\/\d{2}\/\d{4}\s+\d{1,2}:\d{2}\s+[AP]M$/i.test(text)
+        || /^summary\s+order\s+report$/i.test(text)
+        || /^OPN\s*:/i.test(text)
+    )
+}
+
+function extractProjectFromRow(rowLines) {
+    const rowText = normalizeWhitespace(rowLines.join(' '))
+    if (!rowText) return null
+
+    const matches = rowText.match(/\b\d{6}\b/g) ?? []
+    if (matches.length === 0) return null
+
+    const projectNumber = matches[matches.length - 1]
+    const projectIndex = rowText.indexOf(projectNumber)
+    const afterProject = projectIndex >= 0 ? rowText.slice(projectIndex + projectNumber.length) : ''
+
+    const description = cleanProjectDescription(afterProject) || `Project ${projectNumber}`
+    const typeFromText = parseProjectType(description)
+
+    return {
+        project_number: projectNumber,
+        project_description: description,
+        type: typeFromText ?? inferProjectTypeFromDescription(description),
+        sales_price: parseSalesPriceCents(rowText),
+        accepted: true
+    }
+}
+
+function dedupeProjects(rows) {
+    const byNumber = new Map()
+    for (const row of rows) {
+        if (!row?.project_number) continue
+
+        const current = byNumber.get(row.project_number)
+        if (!current) {
+            byNumber.set(row.project_number, row)
+            continue
+        }
+
+        const currentLength = current.project_description?.length ?? 0
+        const nextLength = row.project_description?.length ?? 0
+        if (nextLength > currentLength) {
+            byNumber.set(row.project_number, row)
+        }
     }
 
-    return rows
+    return Array.from(byNumber.values())
 }
 
-function extractProjectLineFromHeader(lines, fullText) {
-    const projectNumber = extractByRegex(fullText, /\bproject\s*id\s*[:\-]?\s*(\d{6})\b/i)
-        || extractLabel(lines, [
-            /project\s*id\s*[:\-]?\s*(\d{6})$/i
-        ])
-    const projectDescription = extractByRegex(fullText, /\bproject\s*name\s*[:\-]?\s*(.+?)\s+project\s*manager\b/i)
-        || extractLabel(lines, [
-            /project\s*name\s*[:\-]?\s*(.+)$/i
-        ])
+function extractProjectsFromDetailLines(detailLines) {
+    const projects = []
+    let inSection = false
+    let rowBuffer = []
 
-    const cleanedDescription = cleanProjectDescription(projectDescription)
-    if (!projectNumber || !cleanedDescription) return []
-    return [{
-        project_number: projectNumber,
-        project_description: cleanedDescription,
-        type: inferProjectTypeFromDescription(cleanedDescription)
-    }]
+    const flushRow = () => {
+        if (rowBuffer.length === 0) return
+        const parsed = extractProjectFromRow(rowBuffer)
+        if (parsed) projects.push(parsed)
+        rowBuffer = []
+    }
+
+    for (const line of detailLines) {
+        const text = normalizeWhitespace(line)
+        if (!text || isNoiseLine(text)) continue
+
+        if (/^sales\s+order\s+lines$/i.test(text)) {
+            inSection = true
+            continue
+        }
+
+        if (!inSection) continue
+
+        if (
+            /^total\s*\(/i.test(text)
+            || /^price\s+and\s+discount$/i.test(text)
+            || /^line\s+attributes\s+differing\s+from\s+header$/i.test(text)
+        ) {
+            flushRow()
+            break
+        }
+
+        if (/^\d+\.\d{3}\b/.test(text)) {
+            flushRow()
+            rowBuffer = [text]
+            continue
+        }
+
+        if (rowBuffer.length > 0) {
+            rowBuffer.push(text)
+        }
+    }
+
+    flushRow()
+    return dedupeProjects(projects)
 }
 
 function groupTextItemsIntoLines(items) {
@@ -140,18 +234,16 @@ function groupTextItemsIntoLines(items) {
         groups.push({ y: item.y, items: [item] })
     }
 
-    const lines = groups
+    return groups
         .map((group) => group.items.sort((a, b) => a.x - b.x).map((item) => item.text).join(' '))
         .map((line) => normalizeWhitespace(line))
         .filter(Boolean)
-
-    return lines
 }
 
-async function extractLines(buffer) {
+async function extractPages(buffer) {
     const loadingTask = getDocument({ data: new Uint8Array(buffer) })
     const pdf = await loadingTask.promise
-    const allLines = []
+    const pages = []
 
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
         const page = await pdf.getPage(pageNumber)
@@ -164,51 +256,71 @@ async function extractLines(buffer) {
             }))
             .filter((item) => item.text)
 
-        allLines.push(...groupTextItemsIntoLines(items))
+        pages.push({
+            pageNumber,
+            lines: groupTextItemsIntoLines(items)
+        })
     }
 
-    return allLines
+    return pages
 }
 
-function buildDraft(lines) {
-    const fullText = normalizeWhitespace(lines.join(' '))
-    const orderNumber = extractByRegex(fullText, /\bsales\s*order\s*[:\-]?\s*([A-Za-z]{2}\d{2}-\d{6})\b/i)
-        || extractLabel(lines, [
-        /sales\s*order\s*[:\-]?\s*([A-Za-z]{2}\d{2}-\d{6})$/i,
-        /order\s*number\s*[:\-]\s*(.+)$/i,
-        /order\s*#\s*[:\-]?\s*(.+)$/i
-    ])
-    const receivedDateText = extractByRegex(fullText, /\bcreated\s*date\s*[:\-]?\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})\b/i)
-        || extractLabel(lines, [
-        /created\s*date\s*[:\-]?\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})$/i,
-        /received\s*date\s*[:\-]\s*(.+)$/i,
-        /order\s*date\s*[:\-]?\s*(.+)$/i
-    ])
-    const quoteRef = extractByRegex(fullText, /\bquote\s*(?:ref|no\.?|number)?\s*[:\-]?\s*([A-Za-z0-9-]{4,})\b/i)
-        || extractLabel(lines, [
-        /quote\s*(?:ref|no\.?|number)?\s*[:\-]?\s*(.+)$/i
-    ])
-    const poRef = extractByRegex(fullText, /\bcustomer\s*po\s*[:\-]?\s*([A-Za-z0-9-]{3,})\b/i)
-        || extractLabel(lines, [
-        /customer\s*po\s*[:\-]?\s*(.+)$/i,
-        /p(?:urchase)?\s*o(?:rder)?\s*(?:ref|no\.?|number)?\s*[:\-]?\s*(.+)$/i
-    ])
-    const paymentTerms = extractLabel(lines, [
+export function buildDraftFromPages(pages) {
+    const allLines = pages.flatMap((page) => page.lines)
+    const firstPageLines = pages.find((page) => page.pageNumber === 1)?.lines ?? allLines
+    const detailLines = pages
+        .filter((page) => page.pageNumber >= 2)
+        .flatMap((page) => page.lines)
+
+    const firstPageText = normalizeWhitespace(firstPageLines.join(' '))
+    const orderNumber = extractByRegex(firstPageText, /\bsales\s*order\s*[:\-]?\s*([A-Za-z]{2}\d{2}-\d{6})\b/i)
+        || extractLabel(firstPageLines, [
+            /sales\s*order\s*[:\-]?\s*([A-Za-z]{2}\d{2}-\d{6})$/i,
+            /order\s*number\s*[:\-]\s*([A-Za-z]{2}\d{2}-\d{6})$/i,
+            /order\s*#\s*[:\-]?\s*([A-Za-z]{2}\d{2}-\d{6})$/i
+        ])
+
+    const receivedDateText = extractByRegex(firstPageText, /\bcreated\s*date\s*[:\-]?\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})\b/i)
+        || extractLabel(firstPageLines, [
+            /created\s*date\s*[:\-]?\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})$/i,
+            /received\s*date\s*[:\-]\s*(.+)$/i,
+            /order\s*date\s*[:\-]?\s*(.+)$/i
+        ])
+
+    const quoteRef = extractByRegex(firstPageText, /\bquote\s*(?:ref|no\.?|number)?\s*[:\-]?\s*([A-Za-z0-9-]{4,})\b/i)
+        || extractLabel(firstPageLines, [
+            /quote\s*(?:ref|no\.?|number)?\s*[:\-]?\s*(.+)$/i
+        ])
+
+    const poRef = extractByRegex(firstPageText, /\bcustomer\s*po\s*[:\-]?\s*([A-Za-z0-9-]{3,})\b/i)
+        || extractLabel(firstPageLines, [
+            /customer\s*po\s*[:\-]?\s*(.+)$/i,
+            /p(?:urchase)?\s*o(?:rder)?\s*(?:ref|no\.?|number)?\s*[:\-]?\s*(.+)$/i
+        ])
+
+    const paymentTerms = extractLabel(firstPageLines, [
         /payment\s*terms\s*[:\-]?\s*(.+)$/i,
         /customer\s*terms\s*[:\-]?\s*(.+)$/i
     ])
-    const deliveryTerms = extractLabel(lines, [
+
+    const deliveryTerms = extractLabel(firstPageLines, [
         /delivery\s*terms\s*[:\-]?\s*(.+)$/i
     ])
-    const projects = extractProjectLines(lines)
-    const projectRows = projects.length > 0 ? projects : extractProjectLineFromHeader(lines, fullText)
+
+    const projectRows = extractProjectsFromDetailLines(detailLines)
 
     const errors = []
     const warnings = []
 
-    if (!orderNumber) errors.push('order_number not found in PDF text')
-    if (!receivedDateText) warnings.push('order_received_date not found; please edit before commit')
-    if (projectRows.length === 0) errors.push('no project lines matched the expected PDF row pattern')
+    if (!orderNumber) errors.push('order_number not found in page 1 PDF text')
+    if (!receivedDateText) warnings.push('order_received_date not found on page 1; please edit before commit')
+
+    if (pages.length < 2) {
+        errors.push('no detail pages found; expected project lines on page 2 and onward')
+    }
+    else if (projectRows.length === 0) {
+        errors.push('no project lines were extracted from detail pages (page 2+)')
+    }
 
     const parsedDate = toEpochFromDateText(receivedDateText)
     if (receivedDateText && !parsedDate) {
@@ -235,12 +347,16 @@ function buildDraft(lines) {
         projects: projectRows,
         metadata: {
             source: 'pdf',
-            template_version: 'pdf_v1',
-            confidence: 0.65
+            template_version: 'pdf_v2_detail_pages',
+            confidence: 0.75
         }
     }
 
-    return { draft, warnings, errors, templateVersion: 'pdf_v1', confidence: 0.65 }
+    return { draft, warnings, errors, templateVersion: 'pdf_v2_detail_pages', confidence: 0.75 }
+}
+
+export function extractProjectsForTest(detailLines) {
+    return extractProjectsFromDetailLines(detailLines)
 }
 
 export async function parsePdfBuffer(buffer) {
@@ -248,8 +364,8 @@ export async function parsePdfBuffer(buffer) {
         throw new Error('empty PDF payload')
     }
 
-    const lines = await extractLines(buffer)
-    if (lines.length === 0) {
+    const pages = await extractPages(buffer)
+    if (pages.length === 0 || pages.every((page) => page.lines.length === 0)) {
         return {
             draft: {
                 order: {
@@ -271,16 +387,16 @@ export async function parsePdfBuffer(buffer) {
                 projects: [],
                 metadata: {
                     source: 'pdf',
-                    template_version: 'pdf_v1',
+                    template_version: 'pdf_v2_detail_pages',
                     confidence: 0
                 }
             },
             warnings: [],
             errors: ['unable to extract readable text from PDF'],
-            templateVersion: 'pdf_v1',
+            templateVersion: 'pdf_v2_detail_pages',
             confidence: 0
         }
     }
 
-    return buildDraft(lines)
+    return buildDraftFromPages(pages)
 }

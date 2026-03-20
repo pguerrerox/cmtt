@@ -2,7 +2,7 @@ import fs from 'fs'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { parsePdfBuffer } from '../services/pdf-scanner/pdf-parser.js'
 
-const filePath = '/home/pete/cmtt/apps/backend/_ref-external-data/_OR Iberplast CA01-433007 PN 927344.pdf'
+const filePath = '../_ref-external-data/_OR Iberplast CA01-433007 PN 927344.pdf'
 
 function normalizeWhitespace(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim()

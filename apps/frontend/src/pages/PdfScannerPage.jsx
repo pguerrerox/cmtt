@@ -23,18 +23,22 @@ function dateInputToEpoch(value) {
 function createEmptyLine() {
   return {
     lineId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    accepted: true,
     project_number: '',
     project_description: '',
-    type: 1
+    type: 1,
+    sales_price: ''
   }
 }
 
 function withLineIds(lines) {
   return (lines ?? []).map((line) => ({
     lineId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    accepted: line.accepted !== false,
     project_number: line.project_number ?? '',
     project_description: line.project_description ?? '',
-    type: Number(line.type ?? 1)
+    type: Number(line.type ?? 1),
+    sales_price: Number.isInteger(line.sales_price) ? String(line.sales_price) : ''
   }))
 }
 
@@ -148,7 +152,9 @@ export default function PdfScannerPage() {
       projects: projectLines.map((line) => ({
         project_number: String(line.project_number || '').trim(),
         project_description: String(line.project_description || '').trim(),
-        type: Number(line.type)
+        type: Number(line.type),
+        sales_price: line.sales_price === '' ? null : Number.parseInt(String(line.sales_price), 10),
+        accepted: Boolean(line.accepted)
       }))
     }
   }
@@ -397,15 +403,24 @@ export default function PdfScannerPage() {
               <table>
                 <thead>
                   <tr>
+                    <th>Accept</th>
                     <th>Project #</th>
                     <th>Description</th>
                     <th>Type</th>
+                    <th>Sales Price (cents)</th>
                     <th />
                   </tr>
                 </thead>
                 <tbody>
                   {projectLines.map((line) => (
                     <tr key={line.lineId}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(line.accepted)}
+                          onChange={(event) => updateLine(line.lineId, { accepted: event.target.checked })}
+                        />
+                      </td>
                       <td>
                         <input
                           value={line.project_number}
@@ -427,6 +442,13 @@ export default function PdfScannerPage() {
                           <option value="2">Auxiliary</option>
                           <option value="3">Mold</option>
                         </select>
+                      </td>
+                      <td>
+                        <input
+                          inputMode="numeric"
+                          value={line.sales_price}
+                          onChange={(event) => updateLine(line.lineId, { sales_price: event.target.value.replace(/\D/g, '') })}
+                        />
                       </td>
                       <td>
                         <button type="button" className="ghost" onClick={() => removeLine(line.lineId)}>Remove</button>

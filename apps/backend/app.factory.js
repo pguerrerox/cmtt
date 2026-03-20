@@ -13,7 +13,7 @@ import orders from './routes/orders.routes.js'
 import projectsCore from './routes/projects-core.routes.js'
 import projectMilestones from './routes/project-milestones.routes.js'
 import projectMilestoneTemplates from './routes/project-milestone-templates.routes.js'
-import psfScanner from './routes/psf-scanner.routes.js'
+import pdfScanner from './routes/pdf-scanner.routes.js'
 
 /**
  * Creates and configures the Express application instance.
@@ -70,7 +70,7 @@ export default function createApp(db) {
         projectsCore,
         projectMilestones,
         projectMilestoneTemplates,
-        psfScanner
+        pdfScanner
     )
 
     return app

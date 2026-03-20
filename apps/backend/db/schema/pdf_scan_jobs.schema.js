@@ -1,10 +1,10 @@
 /**
- * SQL schema for the `psf_scan_jobs` table.
+ * SQL schema for the `pdf_scan_jobs` table.
  *
  * @type {string}
  */
 export default `
-CREATE TABLE IF NOT EXISTS psf_scan_jobs (
+CREATE TABLE IF NOT EXISTS pdf_scan_jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     uploaded_by TEXT,
     original_filename TEXT NOT NULL,

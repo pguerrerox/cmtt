@@ -19,7 +19,7 @@ function parseRow(row) {
     }
 }
 
-export const createPsfScanResult = (db, data) => {
+export const createPdfScanResult = (db, data) => {
     const payload = {
         scan_job_id: data.scan_job_id,
         draft_json: JSON.stringify(data.draft ?? {}),
@@ -31,7 +31,7 @@ export const createPsfScanResult = (db, data) => {
     }
 
     const sql = `
-        INSERT INTO psf_scan_results (
+        INSERT INTO pdf_scan_results (
             scan_job_id, draft_json, warnings_json, errors_json,
             recommendations_json, fingerprint, created_at
         ) VALUES (
@@ -49,13 +49,13 @@ export const createPsfScanResult = (db, data) => {
     }
 }
 
-export const getLatestPsfScanResultByJobId = (db, scanJobId) => {
+export const getLatestPdfScanResultByJobId = (db, scanJobId) => {
     if (!scanJobId) return { ok: false, error: 'scan_job_id is required' }
     try {
         const row = db
-            .prepare('SELECT * FROM psf_scan_results WHERE scan_job_id = ? ORDER BY id DESC LIMIT 1')
+            .prepare('SELECT * FROM pdf_scan_results WHERE scan_job_id = ? ORDER BY id DESC LIMIT 1')
             .get(scanJobId)
-        return row ? { ok: true, data: parseRow(row) } : { ok: false, error: 'psf scan result not found' }
+        return row ? { ok: true, data: parseRow(row) } : { ok: false, error: 'pdf scan result not found' }
     }
     catch (err) {
         return { ok: false, error: `database error: ${err.message}` }

@@ -28,15 +28,17 @@ export const apiClient = {
     return request(path)
   },
   post(path, body) {
+    const payload = body instanceof FormData ? body : JSON.stringify(body)
     return request(path, {
       method: 'POST',
-      body: JSON.stringify(body)
+      body: payload
     })
   },
   patch(path, body) {
+    const payload = body instanceof FormData ? body : JSON.stringify(body)
     return request(path, {
       method: 'PATCH',
-      body: JSON.stringify(body)
+      body: payload
     })
   },
   delete(path) {

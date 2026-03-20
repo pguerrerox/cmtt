@@ -6,7 +6,7 @@ function parseJobRow(row) {
     }
 }
 
-export const createPsfScanJob = (db, data) => {
+export const createPdfScanJob = (db, data) => {
     const now = Date.now()
     const payload = {
         uploaded_by: data.uploaded_by ?? null,
@@ -24,7 +24,7 @@ export const createPsfScanJob = (db, data) => {
     }
 
     const sql = `
-        INSERT INTO psf_scan_jobs (
+        INSERT INTO pdf_scan_jobs (
             uploaded_by, original_filename, mime_type, file_size, status,
             template_version, parse_confidence, error_message,
             committed_order_id, committed_at, created_at, updated_at
@@ -44,7 +44,7 @@ export const createPsfScanJob = (db, data) => {
     }
 }
 
-export const updatePsfScanJob = (db, id, patch) => {
+export const updatePdfScanJob = (db, id, patch) => {
     if (!id) return { ok: false, error: 'id is required' }
     if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return { ok: false, error: 'invalid payload' }
 
@@ -71,19 +71,19 @@ export const updatePsfScanJob = (db, id, patch) => {
     const setClause = keys.map((key) => `${key} = :${key}`).join(', ')
 
     try {
-        const info = db.prepare(`UPDATE psf_scan_jobs SET ${setClause} WHERE id = :id`).run({ ...payload, id })
-        return info.changes > 0 ? { ok: true, message: 'psf scan job updated' } : { ok: false, error: 'psf scan job not found' }
+        const info = db.prepare(`UPDATE pdf_scan_jobs SET ${setClause} WHERE id = :id`).run({ ...payload, id })
+        return info.changes > 0 ? { ok: true, message: 'pdf scan job updated' } : { ok: false, error: 'pdf scan job not found' }
     }
     catch (err) {
         return { ok: false, error: `database error: ${err.message}` }
     }
 }
 
-export const getPsfScanJobById = (db, id) => {
+export const getPdfScanJobById = (db, id) => {
     if (!id) return { ok: false, error: 'id is required' }
     try {
-        const row = db.prepare('SELECT * FROM psf_scan_jobs WHERE id = ?').get(id)
-        return row ? { ok: true, data: parseJobRow(row) } : { ok: false, error: 'psf scan job not found' }
+        const row = db.prepare('SELECT * FROM pdf_scan_jobs WHERE id = ?').get(id)
+        return row ? { ok: true, data: parseJobRow(row) } : { ok: false, error: 'pdf scan job not found' }
     }
     catch (err) {
         return { ok: false, error: `database error: ${err.message}` }

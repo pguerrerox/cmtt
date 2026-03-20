@@ -1,9 +1,9 @@
 import crypto from 'crypto'
-import { createPsfScanJob, getPsfScanJobById, updatePsfScanJob } from '../../repositories/psf-scan-jobs.repo.js'
-import { createPsfScanResult, getLatestPsfScanResultByJobId } from '../../repositories/psf-scan-results.repo.js'
+import { createPdfScanJob, getPdfScanJobById, updatePdfScanJob } from '../../repositories/pdf-scan-jobs.repo.js'
+import { createPdfScanResult, getLatestPdfScanResultByJobId } from '../../repositories/pdf-scan-results.repo.js'
 import { getRelatedProjectRecommendations } from './recommendations.service.js'
-import { parsePsfPdfBuffer } from './pdf-psf.parser.js'
-import { validatePsfDraft } from './psf-scanner.schemas.js'
+import { parsePdfBuffer } from './pdf-parser.js'
+import { validatePdfDraft } from './pdf-scanner.schemas.js'
 import { createOrder, getOrderById, getOrderByNumber } from '../../repositories/orders.repo.js'
 import { createProjectCore, getProjectsByOrderId } from '../../repositories/projectsCore.repo.js'
 
@@ -30,11 +30,11 @@ function toActor(value) {
     return text || null
 }
 
-export async function scanPsfPdf(db, file, options = {}) {
-    if (!file?.buffer) return { ok: false, error: 'psf file is required' }
+export async function scanPdf(db, file, options = {}) {
+    if (!file?.buffer) return { ok: false, error: 'pdf file is required' }
 
     const actor = toActor(options.actor)
-    const createJobResult = createPsfScanJob(db, {
+    const createJobResult = createPdfScanJob(db, {
         uploaded_by: actor,
         original_filename: file.originalname ?? 'upload.pdf',
         mime_type: file.mimetype ?? 'application/pdf',
@@ -47,11 +47,11 @@ export async function scanPsfPdf(db, file, options = {}) {
     const scanJobId = createJobResult.id
 
     try {
-        const parsed = await parsePsfPdfBuffer(file.buffer)
+        const parsed = await parsePdfBuffer(file.buffer)
         const fingerprint = createFingerprint(parsed.draft)
         const recommendations = getRelatedProjectRecommendations(db, parsed.draft)
 
-        const storeResult = createPsfScanResult(db, {
+        const storeResult = createPdfScanResult(db, {
             scan_job_id: scanJobId,
             draft: parsed.draft,
             warnings: parsed.warnings,
@@ -61,14 +61,14 @@ export async function scanPsfPdf(db, file, options = {}) {
         })
 
         if (!storeResult.ok) {
-            updatePsfScanJob(db, scanJobId, {
+            updatePdfScanJob(db, scanJobId, {
                 status: 'failed',
                 error_message: storeResult.error
             })
             return storeResult
         }
 
-        updatePsfScanJob(db, scanJobId, {
+        updatePdfScanJob(db, scanJobId, {
             status: parsed.errors.length > 0 ? 'failed' : 'scanned',
             template_version: parsed.templateVersion,
             parse_confidence: parsed.confidence,
@@ -88,11 +88,11 @@ export async function scanPsfPdf(db, file, options = {}) {
         }
     }
     catch (err) {
-        updatePsfScanJob(db, scanJobId, {
+        updatePdfScanJob(db, scanJobId, {
             status: 'failed',
             error_message: err.message
         })
-        return { ok: false, error: `psf scan failed: ${err.message}` }
+        return { ok: false, error: `pdf scan failed: ${err.message}` }
     }
 }
 
@@ -106,13 +106,13 @@ function findExistingCommitByOrderNumber(db, orderNumber) {
     }
 }
 
-export function commitPsfDraft(db, payload, options = {}) {
+export function commitPdfDraft(db, payload, options = {}) {
     const actor = toActor(options.actor)
     const scanJobId = payload?.scan_job_id
     let draft = payload?.draft
 
     if (scanJobId) {
-        const jobResult = getPsfScanJobById(db, scanJobId)
+        const jobResult = getPdfScanJobById(db, scanJobId)
         if (!jobResult.ok) return { ok: false, error: jobResult.error }
 
         if (jobResult.data.status === 'committed' && jobResult.data.committed_order_id) {
@@ -130,7 +130,7 @@ export function commitPsfDraft(db, payload, options = {}) {
         }
 
         if (!draft) {
-            const latestResult = getLatestPsfScanResultByJobId(db, scanJobId)
+            const latestResult = getLatestPdfScanResultByJobId(db, scanJobId)
             if (!latestResult.ok) return { ok: false, error: latestResult.error }
             draft = latestResult.data.draft
         }
@@ -138,7 +138,7 @@ export function commitPsfDraft(db, payload, options = {}) {
 
     if (!draft) return { ok: false, error: 'draft is required' }
 
-    const validation = validatePsfDraft(draft)
+    const validation = validatePdfDraft(draft)
     if (!validation.ok) {
         return {
             ok: false,
@@ -151,7 +151,7 @@ export function commitPsfDraft(db, payload, options = {}) {
     const existingCommit = findExistingCommitByOrderNumber(db, canonicalDraft.order.order_number)
     if (existingCommit) {
         if (scanJobId) {
-            updatePsfScanJob(db, scanJobId, {
+            updatePdfScanJob(db, scanJobId, {
                 status: 'committed',
                 committed_order_id: existingCommit.order.id,
                 committed_at: Date.now()
@@ -187,7 +187,7 @@ export function commitPsfDraft(db, payload, options = {}) {
         }
 
         if (scanJobId) {
-            const updateResult = updatePsfScanJob(db, scanJobId, {
+            const updateResult = updatePdfScanJob(db, scanJobId, {
                 status: 'committed',
                 committed_order_id: orderResult.id,
                 committed_at: Date.now()

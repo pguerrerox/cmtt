@@ -5,7 +5,7 @@ import HomePage from './pages/HomePage.jsx'
 import AdminTabsPage from './pages/AdminTabsPage.jsx'
 import CreateProjectPage from './pages/CreateProjectPage.jsx'
 import CreateOrderPage from './pages/CreateOrderPage.jsx'
-import PsfScannerPage from './pages/PsfScannerPage.jsx'
+import PdfScannerPage from './pages/PdfScannerPage.jsx'
 import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import ManagerProjectsPage from './pages/ManagerProjectsPage.jsx'
@@ -116,7 +116,7 @@ export default function App() {
           />
           <Route path="/projects/new" element={<CreateProjectPage />} />
           <Route path="/orders/new" element={<CreateOrderPage />} />
-          <Route path="/orders/psf-scan" element={<PsfScannerPage />} />
+          <Route path="/orders/pdf-scan" element={<PdfScannerPage />} />
           <Route path="/projects/:projectNumber" element={<ProjectDetailsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

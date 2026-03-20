@@ -51,6 +51,41 @@ function parseProjectType(value) {
     return TYPE_MAP[normalized] ?? null
 }
 
+function extractByRegex(text, pattern) {
+    const match = text.match(pattern)
+    return match?.[1] ? normalizeWhitespace(match[1]) : ''
+}
+
+function inferProjectTypeFromDescription(value) {
+    const text = normalizeWhitespace(value).toLowerCase()
+    if (!text) return 1
+    if (text.includes('mold') || text.includes('mould')) return 3
+    if (text.includes('aux')) return 2
+    return 1
+}
+
+function cleanProjectDescription(value) {
+    const normalized = normalizeWhitespace(value)
+    if (!normalized) return ''
+    const stopMarkers = [
+        ' REGIONAL CREDITS',
+        ' PROJECT MANAGER',
+        ' LINE OF BUSINESS',
+        ' PLACE OF DELIVERY',
+        ' DELIVERY TERMS',
+        ' CREATED DATE'
+    ]
+
+    let cut = normalized.length
+    const upper = normalized.toUpperCase()
+    for (const marker of stopMarkers) {
+        const index = upper.indexOf(marker)
+        if (index >= 0 && index < cut) cut = index
+    }
+
+    return normalizeWhitespace(normalized.slice(0, cut))
+}
+
 function extractProjectLines(lines) {
     const rows = []
     const linePattern = /^(\d{6})\s+(.+?)\s+(Machine|Auxiliary|Aux|Mold|Mould|[123])$/i
@@ -68,6 +103,25 @@ function extractProjectLines(lines) {
     }
 
     return rows
+}
+
+function extractProjectLineFromHeader(lines, fullText) {
+    const projectNumber = extractByRegex(fullText, /\bproject\s*id\s*[:\-]?\s*(\d{6})\b/i)
+        || extractLabel(lines, [
+            /project\s*id\s*[:\-]?\s*(\d{6})$/i
+        ])
+    const projectDescription = extractByRegex(fullText, /\bproject\s*name\s*[:\-]?\s*(.+?)\s+project\s*manager\b/i)
+        || extractLabel(lines, [
+            /project\s*name\s*[:\-]?\s*(.+)$/i
+        ])
+
+    const cleanedDescription = cleanProjectDescription(projectDescription)
+    if (!projectNumber || !cleanedDescription) return []
+    return [{
+        project_number: projectNumber,
+        project_description: cleanedDescription,
+        type: inferProjectTypeFromDescription(cleanedDescription)
+    }]
 }
 
 function groupTextItemsIntoLines(items) {
@@ -117,26 +171,44 @@ async function extractLines(buffer) {
 }
 
 function buildDraft(lines) {
-    const orderNumber = extractLabel(lines, [
+    const fullText = normalizeWhitespace(lines.join(' '))
+    const orderNumber = extractByRegex(fullText, /\bsales\s*order\s*[:\-]?\s*([A-Za-z]{2}\d{2}-\d{6})\b/i)
+        || extractLabel(lines, [
+        /sales\s*order\s*[:\-]?\s*([A-Za-z]{2}\d{2}-\d{6})$/i,
         /order\s*number\s*[:\-]\s*(.+)$/i,
-        /order\s*#\s*[:\-]\s*(.+)$/i
+        /order\s*#\s*[:\-]?\s*(.+)$/i
     ])
-    const receivedDateText = extractLabel(lines, [
+    const receivedDateText = extractByRegex(fullText, /\bcreated\s*date\s*[:\-]?\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})\b/i)
+        || extractLabel(lines, [
+        /created\s*date\s*[:\-]?\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})$/i,
         /received\s*date\s*[:\-]\s*(.+)$/i,
-        /order\s*date\s*[:\-]\s*(.+)$/i
+        /order\s*date\s*[:\-]?\s*(.+)$/i
     ])
-    const quoteRef = extractLabel(lines, [/quote\s*(?:ref|no\.?|number)?\s*[:\-]\s*(.+)$/i])
-    const poRef = extractLabel(lines, [/p(?:urchase)?\s*o(?:rder)?\s*(?:ref|no\.?|number)?\s*[:\-]\s*(.+)$/i])
-    const paymentTerms = extractLabel(lines, [/payment\s*terms\s*[:\-]\s*(.+)$/i])
-    const deliveryTerms = extractLabel(lines, [/delivery\s*terms\s*[:\-]\s*(.+)$/i])
+    const quoteRef = extractByRegex(fullText, /\bquote\s*(?:ref|no\.?|number)?\s*[:\-]?\s*([A-Za-z0-9-]{4,})\b/i)
+        || extractLabel(lines, [
+        /quote\s*(?:ref|no\.?|number)?\s*[:\-]?\s*(.+)$/i
+    ])
+    const poRef = extractByRegex(fullText, /\bcustomer\s*po\s*[:\-]?\s*([A-Za-z0-9-]{3,})\b/i)
+        || extractLabel(lines, [
+        /customer\s*po\s*[:\-]?\s*(.+)$/i,
+        /p(?:urchase)?\s*o(?:rder)?\s*(?:ref|no\.?|number)?\s*[:\-]?\s*(.+)$/i
+    ])
+    const paymentTerms = extractLabel(lines, [
+        /payment\s*terms\s*[:\-]?\s*(.+)$/i,
+        /customer\s*terms\s*[:\-]?\s*(.+)$/i
+    ])
+    const deliveryTerms = extractLabel(lines, [
+        /delivery\s*terms\s*[:\-]?\s*(.+)$/i
+    ])
     const projects = extractProjectLines(lines)
+    const projectRows = projects.length > 0 ? projects : extractProjectLineFromHeader(lines, fullText)
 
     const errors = []
     const warnings = []
 
     if (!orderNumber) errors.push('order_number not found in PDF text')
     if (!receivedDateText) warnings.push('order_received_date not found; please edit before commit')
-    if (projects.length === 0) errors.push('no project lines matched the expected PSF row pattern')
+    if (projectRows.length === 0) errors.push('no project lines matched the expected PDF row pattern')
 
     const parsedDate = toEpochFromDateText(receivedDateText)
     if (receivedDateText && !parsedDate) {
@@ -160,18 +232,18 @@ function buildDraft(lines) {
             penalty: 0,
             penalty_notes: null
         },
-        projects,
+        projects: projectRows,
         metadata: {
             source: 'pdf',
-            template_version: 'psf_pdf_v1',
+            template_version: 'pdf_v1',
             confidence: 0.65
         }
     }
 
-    return { draft, warnings, errors, templateVersion: 'psf_pdf_v1', confidence: 0.65 }
+    return { draft, warnings, errors, templateVersion: 'pdf_v1', confidence: 0.65 }
 }
 
-export async function parsePsfPdfBuffer(buffer) {
+export async function parsePdfBuffer(buffer) {
     if (!buffer || buffer.length === 0) {
         throw new Error('empty PDF payload')
     }
@@ -199,13 +271,13 @@ export async function parsePsfPdfBuffer(buffer) {
                 projects: [],
                 metadata: {
                     source: 'pdf',
-                    template_version: 'psf_pdf_v1',
+                    template_version: 'pdf_v1',
                     confidence: 0
                 }
             },
             warnings: [],
             errors: ['unable to extract readable text from PDF'],
-            templateVersion: 'psf_pdf_v1',
+            templateVersion: 'pdf_v1',
             confidence: 0
         }
     }

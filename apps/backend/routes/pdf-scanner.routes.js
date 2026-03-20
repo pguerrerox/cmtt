@@ -1,6 +1,6 @@
 import express from 'express'
 import multer from 'multer'
-import { commitPsfDraft, scanPsfPdf } from '../services/psf-scanner/psf-scanner.service.js'
+import { commitPdfDraft, scanPdf } from '../services/pdf-scanner/pdf-scanner.service.js'
 
 const router = express.Router()
 
@@ -26,12 +26,12 @@ function mapErrorToStatus(error) {
     if (error.includes('required')) return 400
     if (error.includes('already exists')) return 409
     if (error.startsWith('database error')) return 500
-    if (error.startsWith('psf scan failed')) return 422
+    if (error.startsWith('pdf scan failed')) return 422
     return 400
 }
 
-router.post('/psf/scan', upload.single('psf'), async (req, res) => {
-    const result = await scanPsfPdf(req.db, req.file, {
+router.post('/pdf/scan', upload.single('pdf'), async (req, res) => {
+    const result = await scanPdf(req.db, req.file, {
         actor: req.body?.uploaded_by ?? null
     })
 
@@ -39,8 +39,8 @@ router.post('/psf/scan', upload.single('psf'), async (req, res) => {
     return res.status(200).json(result)
 })
 
-router.post('/psf/commit', (req, res) => {
-    const result = commitPsfDraft(req.db, req.body, {
+router.post('/pdf/commit', (req, res) => {
+    const result = commitPdfDraft(req.db, req.body, {
         actor: req.body?.committed_by ?? null
     })
 

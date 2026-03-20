@@ -71,8 +71,8 @@
       - `project_id` integer, fk -> project_core.id
       - `pm_wbs_date` integer
       - `pm_rto_date` integer
-      - `pm_psf_received_date` integer
-      - `pm_psf_submitted` integer
+      - `pm_pdf_received_date` integer
+      - `pm_pdf_submitted` integer
       - `pm_korm` integer
       - `pm_korm_date` integer
       - `mih_date_planned` integer

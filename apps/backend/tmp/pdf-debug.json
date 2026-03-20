@@ -1,0 +1,197 @@
+
+> @cmtt/backend@0.8.1 debug:pdf-extract
+> node ./workers/run-pdf-debug-once.js
+
+{
+  "filePath": "/home/pete/cmtt/apps/backend/_ref-external-data/_OR Iberplast CA01-433007 PN 927344.pdf",
+  "pageCount": 6,
+  "pages": [
+    {
+      "pageNumber": 1,
+      "lines": [
+        "Page 1 of 6",
+        "03/02/2026 9:25 AM",
+        "CA01-433007",
+        "Summary order report",
+        "ORDER HEADER DETAILS Created date Feb 03, 2026",
+        "Legal entity ca01 Sales order CA01-433007 Report date",
+        "Currency USD Quote number QUO-368521-Z9K2W2 Printed By HUSKY1\\bdepalma",
+        "INVOICE TO CUSTOMER Created by bdepalma SHIP TO CUSTOMER",
+        "New customer No Credit analyst LA NSA (Raul Castro) Shipping name \u0012KDW\u0004H/\u0004\u0003/\u0011\u001cZK\u0004D\u001cZ/\u0012\u0004E\u0004\u0003\u0018\u001c\u0003W>\u0004^d/\u0012K^\u0003",
+        "SAS - IBERPLAST SAS",
+        "Customer group Area manager DIMITRY LISSOW",
+        "Shipping contact",
+        "Invoice account 56486 Sales region area manager Dimitry Lissow | BP S.America",
+        "Shipping address Carrera 6 - No. 19-29",
+        "Invoice name \u0012KDW\u0004H/\u0004\u0003/\u0011\u001cZK\u0004D\u001cZ/\u0012\u0004E\u0004\u0003\u0018\u001c\u0003W>\u0004^d/\u0012K^\u0003 Customer PO P626022-01",
+        "MD",
+        "SAS - IBERPLAST SAS",
+        "Madrid,CU,250030Colombia",
+        "Customer reference",
+        "Invoice contact",
+        "Ship To EIN/VAT 800.067.861-5",
+        "Delivery penalty No",
+        "Invoice address Carrera 6 - No. 19-29",
+        "END CUSTOMER",
+        "Delivery penalty percent 0%",
+        "MD",
+        "End customer name \u0012KDW\u0004H/\u0004\u0003/\u0011\u001cZK\u0004D\u001cZ/\u0012\u0004E\u0004\u0003\u0018\u001c\u0003W>\u0004^d/\u0012K^\u0003",
+        "Madrid,CU,250030Colombia",
+        "Delivery guarantee",
+        "SAS - IBERPLAST SAS",
+        "Invoice contact #",
+        "Performance guarantee End customer address Carrera 6 - No. 19-29",
+        "Invoice EIN/VAT 800.067.861-5",
+        "MD",
+        "Bank Guarantee No",
+        "Madrid,CU,250030Colombia",
+        "SOLD TO CUSTOMER",
+        "Letter of credit No Invoice presentation No",
+        "Customer account 56486",
+        "LC latest shipment date Invoice presentation",
+        "Customer name \u0012KDW\u0004H/\u0004\u0003/\u0011\u001cZK\u0004D\u001cZ/\u0012\u0004E\u0004\u0003\u0018\u001c\u0003W>\u0004^d/\u0012K^\u0003",
+        "details",
+        "SAS - IBERPLAST SAS LC expiry date",
+        "Customer contact",
+        "LC requirements",
+        "Customer address Carrera 6 - No. 19-29",
+        "Contract No",
+        "MD",
+        "Madrid,CU,250030Colombia",
+        "Customer arranged ship Yes",
+        "Customer Contact #",
+        "Project ID 927344",
+        "Sold to EIN/VAT 800.067.861-5",
+        "Project name 144 50x140HPP5e Mold",
+        "REGIONAL CREDITS",
+        "Project manager Pedro Guerrero",
+        "ID Area manager Split",
+        "Sales region 404 Dimitry Lissow | BP 100.00 Line of business B150",
+        "S.America",
+        "Place of delivery, Bolton, ON",
+        "Other region 0.00",
+        "destination or port",
+        "Ship to region 0.00 Delivery terms FCA"
+      ]
+    },
+    {
+      "pageNumber": 2,
+      "lines": [
+        "Page 2 of 6",
+        "03/02/2026 9:25 AM",
+        "CA01-433007",
+        "Summary order report"
+      ]
+    },
+    {
+      "pageNumber": 3,
+      "lines": [
+        "Page 3 of 6",
+        "03/02/2026 9:25 AM",
+        "CA01-433007",
+        "Summary order report",
+        "Sales order lines",
+        "USD",
+        "Ops Ops Order",
+        "Line Release Reference Reported Credit Requested Confirmed Report Financial",
+        "Line status Qty Item item project Facility Product name Sales price Discount hold",
+        "number flag price amount Status ship ship date date dimension code",
+        "number number code",
+        "1.000 No Open order 1.00 PM1621 1406514 927344 HyPET HPP5e 144 Full Molds / 1,757,658 1,202,265 1,202,265 31.60% Submit Shipping Mar 20, 76165 HyPET HPP5e",
+        "2 144 50x140HPP5e Mold Hold 2026 144 Full Molds",
+        "OPN:",
+        "2.000 No Open order 1.00 PM1621 1406514 927344 HyPET HPP5e 144 Full Molds / 18,107 12,380 12,380 31.63% Submit Shipping Mar 20, 76165 HyPET HPP5e",
+        "4 Spares Package Hold 2026 144 Full Molds",
+        "OPN:",
+        "3.000 No Open order 1.00 PM2001 1410223 927344 Inst/Startup Machine & Mold / 11,505 10,355 10,355 10.00% Submit Shipping Mar 20, 78031 Machine and",
+        "6 Install&S/U, MLD Hold 2026 System Startup",
+        "OPN:",
+        "Total (USD) 1,787,270 1,225,000 1,225,000 31.46%",
+        "Price and discount",
+        "Line Product name Supplier price Rebate amount Discounts Future Credits Redeem Credits",
+        "number",
+        "display Calculate display Calculate General Special Total Discount Type Amount Maximu Duration Redempti Amount Granting rebate",
+        "Supplier Price Rebate Amount discount discount discount code m on type Redeemed project number",
+        "amount amount percent",
+        "1.000 HyPET HPP5e 144 Full Molds / 144 50x140HPP5e Mold 0 0 555,393 0 555,393 0 0.00% 0",
+        "2.000 HyPET HPP5e 144 Full Molds / Spares Package 0 0 5,727 0 5,727 0 0.00% 0",
+        "3.000 Inst/Startup Machine & Mold / Install&S/U, MLD 0 0 1,150 0 1,150 0 0.00% 0",
+        "Line attributes differing from header",
+        "Line Alternate delivery address Place of delivery, destination or port Delivery terms REGIONAL CREDITS",
+        "number",
+        "Customer terms",
+        "Other | 90% prior to ship / 10% Net 90 days from shipment or at start-up, whichever occurs first",
+        "Header",
+        "ͻ\u0003 Email with PO and quote"
+      ]
+    },
+    {
+      "pageNumber": 4,
+      "lines": [
+        "Page 4 of 6",
+        "03/02/2026 9:25 AM",
+        "CA01-433007",
+        "Summary order report",
+        "Secondary",
+        "financial Parent line number Contract duration",
+        "dimension code"
+      ]
+    },
+    {
+      "pageNumber": 5,
+      "lines": [
+        "Page 5 of 6",
+        "03/02/2026 9:25 AM",
+        "CA01-433007",
+        "Summary order report",
+        "Lines"
+      ]
+    },
+    {
+      "pageNumber": 6,
+      "lines": [
+        "Page 6 of 6",
+        "03/02/2026 9:25 AM",
+        "CA01-433007",
+        "Summary order report"
+      ]
+    }
+  ],
+  "fullText": "Page 1 of 6 03/02/2026 9:25 AM CA01-433007 Summary order report ORDER HEADER DETAILS Created date Feb 03, 2026 Legal entity ca01 Sales order CA01-433007 Report date Currency USD Quote number QUO-368521-Z9K2W2 Printed By HUSKY1\\bdepalma INVOICE TO CUSTOMER Created by bdepalma SHIP TO CUSTOMER New customer No Credit analyst LA NSA (Raul Castro) Shipping name \u0012KDW\u0004H/\u0004\u0003/\u0011\u001cZK\u0004D\u001cZ/\u0012\u0004E\u0004\u0003\u0018\u001c\u0003W>\u0004^d/\u0012K^\u0003 SAS - IBERPLAST SAS Customer group Area manager DIMITRY LISSOW Shipping contact Invoice account 56486 Sales region area manager Dimitry Lissow | BP S.America Shipping address Carrera 6 - No. 19-29 Invoice name \u0012KDW\u0004H/\u0004\u0003/\u0011\u001cZK\u0004D\u001cZ/\u0012\u0004E\u0004\u0003\u0018\u001c\u0003W>\u0004^d/\u0012K^\u0003 Customer PO P626022-01 MD SAS - IBERPLAST SAS Madrid,CU,250030Colombia Customer reference Invoice contact Ship To EIN/VAT 800.067.861-5 Delivery penalty No Invoice address Carrera 6 - No. 19-29 END CUSTOMER Delivery penalty percent 0% MD End customer name \u0012KDW\u0004H/\u0004\u0003/\u0011\u001cZK\u0004D\u001cZ/\u0012\u0004E\u0004\u0003\u0018\u001c\u0003W>\u0004^d/\u0012K^\u0003 Madrid,CU,250030Colombia Delivery guarantee SAS - IBERPLAST SAS Invoice contact # Performance guarantee End customer address Carrera 6 - No. 19-29 Invoice EIN/VAT 800.067.861-5 MD Bank Guarantee No Madrid,CU,250030Colombia SOLD TO CUSTOMER Letter of credit No Invoice presentation No Customer account 56486 LC latest shipment date Invoice presentation Customer name \u0012KDW\u0004H/\u0004\u0003/\u0011\u001cZK\u0004D\u001cZ/\u0012\u0004E\u0004\u0003\u0018\u001c\u0003W>\u0004^d/\u0012K^\u0003 details SAS - IBERPLAST SAS LC expiry date Customer contact LC requirements Customer address Carrera 6 - No. 19-29 Contract No MD Madrid,CU,250030Colombia Customer arranged ship Yes Customer Contact # Project ID 927344 Sold to EIN/VAT 800.067.861-5 Project name 144 50x140HPP5e Mold REGIONAL CREDITS Project manager Pedro Guerrero ID Area manager Split Sales region 404 Dimitry Lissow | BP 100.00 Line of business B150 S.America Place of delivery, Bolton, ON Other region 0.00 destination or port Ship to region 0.00 Delivery terms FCA Page 2 of 6 03/02/2026 9:25 AM CA01-433007 Summary order report Page 3 of 6 03/02/2026 9:25 AM CA01-433007 Summary order report Sales order lines USD Ops Ops Order Line Release Reference Reported Credit Requested Confirmed Report Financial Line status Qty Item item project Facility Product name Sales price Discount hold number flag price amount Status ship ship date date dimension code number number code 1.000 No Open order 1.00 PM1621 1406514 927344 HyPET HPP5e 144 Full Molds / 1,757,658 1,202,265 1,202,265 31.60% Submit Shipping Mar 20, 76165 HyPET HPP5e 2 144 50x140HPP5e Mold Hold 2026 144 Full Molds OPN: 2.000 No Open order 1.00 PM1621 1406514 927344 HyPET HPP5e 144 Full Molds / 18,107 12,380 12,380 31.63% Submit Shipping Mar 20, 76165 HyPET HPP5e 4 Spares Package Hold 2026 144 Full Molds OPN: 3.000 No Open order 1.00 PM2001 1410223 927344 Inst/Startup Machine & Mold / 11,505 10,355 10,355 10.00% Submit Shipping Mar 20, 78031 Machine and 6 Install&S/U, MLD Hold 2026 System Startup OPN: Total (USD) 1,787,270 1,225,000 1,225,000 31.46% Price and discount Line Product name Supplier price Rebate amount Discounts Future Credits Redeem Credits number display Calculate display Calculate General Special Total Discount Type Amount Maximu Duration Redempti Amount Granting rebate Supplier Price Rebate Amount discount discount discount code m on type Redeemed project number amount amount percent 1.000 HyPET HPP5e 144 Full Molds / 144 50x140HPP5e Mold 0 0 555,393 0 555,393 0 0.00% 0 2.000 HyPET HPP5e 144 Full Molds / Spares Package 0 0 5,727 0 5,727 0 0.00% 0 3.000 Inst/Startup Machine & Mold / Install&S/U, MLD 0 0 1,150 0 1,150 0 0.00% 0 Line attributes differing from header Line Alternate delivery address Place of delivery, destination or port Delivery terms REGIONAL CREDITS number Customer terms Other | 90% prior to ship / 10% Net 90 days from shipment or at start-up, whichever occurs first Header ͻ\u0003 Email with PO and quote Page 4 of 6 03/02/2026 9:25 AM CA01-433007 Summary order report Secondary financial Parent line number Contract duration dimension code Page 5 of 6 03/02/2026 9:25 AM CA01-433007 Summary order report Lines Page 6 of 6 03/02/2026 9:25 AM CA01-433007 Summary order report",
+  "parsed": {
+    "draft": {
+      "order": {
+        "type": 0,
+        "order_number": "CA01-433007",
+        "order_received_date": 1770094800000,
+        "project_manager_id": 0,
+        "sales_manager_id": 0,
+        "project_engineer_id": 0,
+        "ship_to_facility_id": 0,
+        "customer_id": 0,
+        "quote_ref": "QUO-368521-Z9K2W2",
+        "po_ref": "P626022-01",
+        "payment_terms": "",
+        "delivery_terms": "FCA",
+        "penalty": 0,
+        "penalty_notes": null
+      },
+      "projects": [
+        {
+          "project_number": "927344",
+          "project_description": "144 50x140HPP5e Mold",
+          "type": 3
+        }
+      ],
+      "metadata": {
+        "source": "pdf",
+        "template_version": "pdf_v1",
+        "confidence": 0.65
+      }
+    },
+    "warnings": [],
+    "errors": [],
+    "templateVersion": "pdf_v1",
+    "confidence": 0.65
+  }
+}

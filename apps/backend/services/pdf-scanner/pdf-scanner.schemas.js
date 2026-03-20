@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const psfOrderSchema = z.object({
+const pdfOrderSchema = z.object({
     type: z.number().int().min(0).max(1),
     order_number: z.string().regex(/^[A-Za-z]{2}\d{2}-\d{6}$/),
     order_received_date: z.number().int().positive(),
@@ -17,15 +17,15 @@ const psfOrderSchema = z.object({
     penalty_notes: z.string().nullable().optional()
 })
 
-const psfProjectLineSchema = z.object({
+const pdfProjectLineSchema = z.object({
     project_number: z.string().regex(/^\d{6}$/),
     project_description: z.string().min(1),
     type: z.number().int().min(1).max(3)
 })
 
-export const psfScanDraftSchema = z.object({
-    order: psfOrderSchema,
-    projects: z.array(psfProjectLineSchema).min(1),
+export const pdfScanDraftSchema = z.object({
+    order: pdfOrderSchema,
+    projects: z.array(pdfProjectLineSchema).min(1),
     metadata: z.object({
         source: z.literal('pdf'),
         template_version: z.string().min(1),
@@ -33,12 +33,12 @@ export const psfScanDraftSchema = z.object({
     })
 })
 
-export function validatePsfDraft(draft) {
-    const result = psfScanDraftSchema.safeParse(draft)
+export function validatePdfDraft(draft) {
+    const result = pdfScanDraftSchema.safeParse(draft)
     if (result.success) return { ok: true, data: result.data }
     const issues = result.error.issues.map((issue) => {
         const path = issue.path.join('.')
         return path ? `${path}: ${issue.message}` : issue.message
     })
-    return { ok: false, error: 'invalid psf draft', issues }
+    return { ok: false, error: 'invalid pdf draft', issues }
 }

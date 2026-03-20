@@ -131,8 +131,8 @@ export default function ManagerProjectsPage() {
           <Link to="/orders/new" className="admin-tab-link">
             Create Order
           </Link>
-          <Link to="/orders/psf-scan" className="admin-tab-link">
-            Scan PSF
+          <Link to="/orders/pdf-scan" className="admin-tab-link">
+            Scan Order
           </Link>
           <Link to="/projects/new" className="admin-tab-link">
             Create Project

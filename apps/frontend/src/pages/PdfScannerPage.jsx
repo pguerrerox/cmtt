@@ -5,7 +5,7 @@ import { getSalesManagers } from '../shared/api/salesManagers.js'
 import { getProjectEngineers } from '../shared/api/projectEngineers.js'
 import { getCustomers } from '../shared/api/customers.js'
 import { getFacilities } from '../shared/api/facilities.js'
-import { commitPsfDraft, scanPsfFile } from '../shared/api/psfScanner.js'
+import { commitPdfDraft, scanPdfFile } from '../shared/api/pdfScanner.js'
 import { useSelectedManager } from '../state/selectedManager.context.jsx'
 
 function epochToDateInput(epoch) {
@@ -38,7 +38,7 @@ function withLineIds(lines) {
   }))
 }
 
-export default function PsfScannerPage() {
+export default function PdfScannerPage() {
   const { selectedManager } = useSelectedManager()
   const [managers, setManagers] = useState([])
   const [salesManagers, setSalesManagers] = useState([])
@@ -46,7 +46,7 @@ export default function PsfScannerPage() {
   const [customers, setCustomers] = useState([])
   const [facilities, setFacilities] = useState([])
 
-  const [psfFile, setPsfFile] = useState(null)
+  const [pdfFile, setPdfFile] = useState(null)
   const [scanJobId, setScanJobId] = useState(null)
   const [recommendations, setRecommendations] = useState([])
   const [warnings, setWarnings] = useState([])
@@ -155,7 +155,7 @@ export default function PsfScannerPage() {
 
   async function onScanSubmit(event) {
     event.preventDefault()
-    if (!psfFile) {
+    if (!pdfFile) {
       setError('Please choose a PDF file first.')
       return
     }
@@ -165,7 +165,7 @@ export default function PsfScannerPage() {
       setStatus('')
       setError('')
 
-      const result = await scanPsfFile(psfFile, selectedManager.username)
+      const result = await scanPdfFile(pdfFile, selectedManager.username)
       const nextDraft = {
         ...result.draft,
         order: {
@@ -180,7 +180,7 @@ export default function PsfScannerPage() {
       setRecommendations(result.recommendations ?? [])
       setWarnings(result.warnings ?? [])
       setErrors(result.errors ?? [])
-      setStatus(`PSF scanned. Job #${result.scan_job_id}`)
+      setStatus(`PDF scanned. Job #${result.scan_job_id}`)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -198,7 +198,7 @@ export default function PsfScannerPage() {
       setError('')
 
       const commitDraft = buildCommitDraft()
-      const result = await commitPsfDraft({
+      const result = await commitPdfDraft({
         scan_job_id: scanJobId,
         draft: commitDraft,
         committed_by: selectedManager.username
@@ -219,9 +219,9 @@ export default function PsfScannerPage() {
   return (
     <section className="stack gap-lg">
       <div className="panel hero compact">
-        <p className="eyebrow">PSF Scanner</p>
-        <h2>Upload PSF PDF</h2>
-        <p>Scan a standardized PSF PDF, review extracted data, edit it, and commit to create order lines.</p>
+        <p className="eyebrow">PDF Scanner</p>
+        <h2>Upload Order PDF</h2>
+        <p>Scan a standardized order PDF, review extracted data, edit it, and commit to create order lines.</p>
       </div>
 
       <form className="panel form-grid" onSubmit={onScanSubmit}>
@@ -230,15 +230,15 @@ export default function PsfScannerPage() {
           <Link to="/manager" className="ghost as-link">Back</Link>
         </div>
         <label>
-          PSF File (PDF)
+          PDF File (PDF)
           <input
             type="file"
             accept="application/pdf,.pdf"
-            onChange={(event) => setPsfFile(event.target.files?.[0] ?? null)}
+            onChange={(event) => setPdfFile(event.target.files?.[0] ?? null)}
           />
         </label>
         <button type="submit" disabled={loading || scanning}>
-          {scanning ? 'Scanning...' : 'Scan PSF'}
+          {scanning ? 'Scanning...' : 'Scan Order'}
         </button>
       </form>
 

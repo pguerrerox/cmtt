@@ -6,9 +6,11 @@ import {
   getCustomers,
   updateCustomer
 } from '../../shared/api/customers.js'
+import { createFacility } from '../../shared/api/facilities.js'
 import { getManagersPublic } from '../../shared/api/managers.js'
 import { getProjectEngineers } from '../../shared/api/projectEngineers.js'
 import { getSalesManagers } from '../../shared/api/salesManagers.js'
+import { parseCsvRows } from '../../shared/batchCsv.js'
 
 const initialForm = {
   name: '',
@@ -18,6 +20,8 @@ const initialForm = {
   sales_manager_id: '',
   project_engineer_id: ''
 }
+
+const CUSTOMER_BATCH_HELP = 'CSV order: customer_name, headquarters_address, headquarter_contacts, project_manager_username, sales_manager_email, project_engineer_email, site_name, site_address, site_contacts. One row = one site.'
 
 function toNullableId(value) {
   if (value === '' || value === null || value === undefined) return null
@@ -36,6 +40,12 @@ export default function AdminCustomersTab() {
   const [form, setForm] = useState(initialForm)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  const [showBatch, setShowBatch] = useState(false)
+  const [showBatchHelp, setShowBatchHelp] = useState(false)
+  const [batchInput, setBatchInput] = useState('')
+  const [batchStatus, setBatchStatus] = useState('')
+  const [batchError, setBatchError] = useState('')
+  const [batchErrors, setBatchErrors] = useState([])
 
   async function loadDependencies() {
     const [managerResponse, salesResponse, engineerResponse] = await Promise.all([
@@ -107,6 +117,140 @@ export default function AdminCustomersTab() {
     }
   }
 
+  async function onBatchImport() {
+    setStatus('')
+    setError('')
+    setBatchStatus('')
+    setBatchError('')
+    setBatchErrors([])
+
+    const parsedRows = parseCsvRows(batchInput)
+    if (parsedRows.length === 0) {
+      setBatchError('Paste at least one CSV row.')
+      return
+    }
+
+    const managerByUsername = new Map(
+      projectManagers
+        .map((item) => [String(item.username ?? item.name ?? '').trim().toLowerCase(), item.id])
+        .filter(([key]) => Boolean(key))
+    )
+    const salesByEmail = new Map(
+      salesManagers
+        .map((item) => [String(item.email ?? '').trim().toLowerCase(), item.id])
+        .filter(([key]) => Boolean(key))
+    )
+    const engineersByEmail = new Map(
+      projectEngineers
+        .map((item) => [String(item.email ?? '').trim().toLowerCase(), item.id])
+        .filter(([key]) => Boolean(key))
+    )
+
+    const customerByName = new Map(
+      rows
+        .map((item) => [String(item.name ?? '').trim().toLowerCase(), item.id])
+        .filter(([key]) => Boolean(key))
+    )
+
+    let customersCreated = 0
+    let sitesCreated = 0
+    const failedRows = []
+
+    for (const row of parsedRows) {
+      const [
+        customerName,
+        headquartersAddress,
+        headquarterContacts,
+        managerUsername,
+        salesEmail,
+        engineerEmail,
+        siteName,
+        siteAddress,
+        siteContacts
+      ] = row.values
+
+      if (!customerName || !headquartersAddress || !headquarterContacts || !managerUsername || !salesEmail || !engineerEmail || !siteName || !siteAddress || !siteContacts) {
+        failedRows.push(`Row ${row.rowNumber}: all 9 columns are required.`)
+        continue
+      }
+
+      const managerId = managerByUsername.get(managerUsername.toLowerCase())
+      const salesId = salesByEmail.get(salesEmail.toLowerCase())
+      const engineerId = engineersByEmail.get(engineerEmail.toLowerCase())
+
+      if (!managerId) {
+        failedRows.push(`Row ${row.rowNumber}: manager username '${managerUsername}' not found.`)
+        continue
+      }
+
+      if (!salesId) {
+        failedRows.push(`Row ${row.rowNumber}: sales manager email '${salesEmail}' not found.`)
+        continue
+      }
+
+      if (!engineerId) {
+        failedRows.push(`Row ${row.rowNumber}: project engineer email '${engineerEmail}' not found.`)
+        continue
+      }
+
+      const customerKey = customerName.toLowerCase()
+      let customerId = customerByName.get(customerKey)
+
+      if (!customerId) {
+        try {
+          await createCustomer({
+            name: customerName,
+            headquarters_address: headquartersAddress,
+            headquarter_contacts: headquarterContacts,
+            project_manager_id: managerId,
+            sales_manager_id: salesId,
+            project_engineer_id: engineerId
+          })
+
+          const refreshCustomers = await getCustomers()
+          const inserted = (refreshCustomers?.data ?? []).find(
+            (item) => String(item.name ?? '').trim().toLowerCase() === customerKey
+          )
+
+          if (!inserted?.id) {
+            failedRows.push(`Row ${row.rowNumber}: customer '${customerName}' created but not found for site linkage.`)
+            continue
+          }
+
+          customerId = inserted.id
+          customerByName.set(customerKey, customerId)
+          customersCreated += 1
+        } catch (err) {
+          failedRows.push(`Row ${row.rowNumber}: ${err.message}`)
+          continue
+        }
+      }
+
+      try {
+        await createFacility({
+          customer_id: customerId,
+          name: siteName,
+          address: siteAddress,
+          contacts: siteContacts
+        })
+        sitesCreated += 1
+      } catch (err) {
+        failedRows.push(`Row ${row.rowNumber}: ${err.message}`)
+      }
+    }
+
+    await loadRows()
+
+    if (failedRows.length > 0) {
+      setBatchError(`Created ${customersCreated} customer(s), ${sitesCreated} site(s); ${failedRows.length} row(s) failed.`)
+      setBatchErrors(failedRows)
+      return
+    }
+
+    setBatchStatus(`Created ${customersCreated} customer(s) and ${sitesCreated} site(s).`)
+    setBatchInput('')
+  }
+
   function onEdit(row) {
     setEditingId(row.id)
     setShowForm(true)
@@ -139,10 +283,42 @@ export default function AdminCustomersTab() {
     <div className="stack gap-lg">
       <div className="panel-header">
         <h3>Customers</h3>
-        <button type="button" onClick={() => setShowForm((prev) => !prev)}>
-          {showForm ? 'Hide Form' : 'Add Customer'}
-        </button>
+        <div className="batch-actions">
+          <button type="button" onClick={() => setShowForm((prev) => !prev)}>
+            {showForm ? 'Hide Form' : 'Add Customer'}
+          </button>
+          <button type="button" className="ghost" onClick={() => setShowBatch((prev) => !prev)}>
+            {showBatch ? 'Hide Batch Insert' : 'Batch Insert'}
+          </button>
+          <button type="button" className="ghost" onClick={() => setShowBatchHelp((prev) => !prev)}>
+            Help
+          </button>
+        </div>
       </div>
+
+      {showBatchHelp && <p className="help-box">{CUSTOMER_BATCH_HELP}</p>}
+
+      {showBatch && (
+        <div className="panel batch-panel stack gap-md">
+          <label>
+            Paste CSV rows (customer + site)
+            <textarea
+              className="batch-textarea"
+              value={batchInput}
+              onChange={(event) => setBatchInput(event.target.value)}
+              placeholder="ACME,USA HQ,ops@acme.com,pmike,sales@acme.com,eng@acme.com,Plant A,Address A,plant-a@acme.com"
+            />
+          </label>
+          <button type="button" onClick={onBatchImport}>Import Batch</button>
+          {batchStatus && <p className="success">{batchStatus}</p>}
+          {batchError && <p className="error">{batchError}</p>}
+          {batchErrors.length > 0 && (
+            <ul className="entity-list">
+              {batchErrors.map((rowError) => <li key={rowError} className="entity-row">{rowError}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <form className="form-grid" onSubmit={onSubmit}>

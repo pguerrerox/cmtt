@@ -5,6 +5,7 @@ import {
   getManagersAdmin,
   updateManager
 } from '../../shared/api/managers.js'
+import { parseBooleanFlag, parseCsvRows } from '../../shared/batchCsv.js'
 
 const MANAGER_ROLE_OPTIONS = [
   'Team Leader',
@@ -21,6 +22,8 @@ const initialForm = {
   isActive: 1,
   isAdmin: 0
 }
+
+const BATCH_HELP = 'CSV order: username, fullname, email, role, isActive, isAdmin. Allowed role values: Team Leader | Senior Project Manager | Project Manager | Guest. Use 1/0, true/false, yes/no for flags.'
 
 function GearIcon() {
   return (
@@ -46,6 +49,12 @@ export default function AdminManagersTab() {
   const [form, setForm] = useState(initialForm)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  const [showBatch, setShowBatch] = useState(false)
+  const [showBatchHelp, setShowBatchHelp] = useState(false)
+  const [batchInput, setBatchInput] = useState('')
+  const [batchStatus, setBatchStatus] = useState('')
+  const [batchError, setBatchError] = useState('')
+  const [batchErrors, setBatchErrors] = useState([])
 
   async function loadManagers() {
     try {
@@ -85,6 +94,61 @@ export default function AdminManagersTab() {
     } catch (err) {
       setError(err.message)
     }
+  }
+
+  async function onBatchImport() {
+    setStatus('')
+    setError('')
+    setBatchStatus('')
+    setBatchError('')
+    setBatchErrors([])
+
+    const rows = parseCsvRows(batchInput)
+    if (rows.length === 0) {
+      setBatchError('Paste at least one CSV row.')
+      return
+    }
+
+    let created = 0
+    const failedRows = []
+
+    for (const row of rows) {
+      const [name, fullname, email, role, isActive, isAdmin] = row.values
+      if (!name || !fullname || !email || !role) {
+        failedRows.push(`Row ${row.rowNumber}: username, fullname, email and role are required.`)
+        continue
+      }
+
+      if (!MANAGER_ROLE_OPTIONS.includes(role)) {
+        failedRows.push(`Row ${row.rowNumber}: invalid role '${role}'.`)
+        continue
+      }
+
+      try {
+        await createManager({
+          name,
+          fullname,
+          email,
+          role,
+          isActive: parseBooleanFlag(isActive, 1),
+          isAdmin: parseBooleanFlag(isAdmin, 0)
+        })
+        created += 1
+      } catch (err) {
+        failedRows.push(`Row ${row.rowNumber}: ${err.message}`)
+      }
+    }
+
+    await loadManagers()
+
+    if (failedRows.length > 0) {
+      setBatchError(`Imported ${created} row(s), ${failedRows.length} failed.`)
+      setBatchErrors(failedRows)
+      return
+    }
+
+    setBatchStatus(`Imported ${created} manager(s) successfully.`)
+    setBatchInput('')
   }
 
   function onEdit(manager) {
@@ -127,10 +191,42 @@ export default function AdminManagersTab() {
     <div className="stack gap-lg">
       <div className="panel-header">
         <h3>Managers</h3>
-        <button type="button" onClick={() => setShowForm((prev) => !prev)}>
-          {showForm ? 'Hide Form' : 'Add Manager'}
-        </button>
+        <div className="batch-actions">
+          <button type="button" onClick={() => setShowForm((prev) => !prev)}>
+            {showForm ? 'Hide Form' : 'Add Manager'}
+          </button>
+          <button type="button" className="ghost" onClick={() => setShowBatch((prev) => !prev)}>
+            {showBatch ? 'Hide Batch Insert' : 'Batch Insert'}
+          </button>
+          <button type="button" className="ghost" onClick={() => setShowBatchHelp((prev) => !prev)}>
+            Help
+          </button>
+        </div>
       </div>
+
+      {showBatchHelp && <p className="help-box">{BATCH_HELP}</p>}
+
+      {showBatch && (
+        <div className="panel batch-panel stack gap-md">
+          <label>
+            Paste CSV rows
+            <textarea
+              className="batch-textarea"
+              value={batchInput}
+              onChange={(event) => setBatchInput(event.target.value)}
+              placeholder="pmike,Paul Mike,pmike@example.com,Project Manager,1,0"
+            />
+          </label>
+          <button type="button" onClick={onBatchImport}>Import Batch</button>
+          {batchStatus && <p className="success">{batchStatus}</p>}
+          {batchError && <p className="error">{batchError}</p>}
+          {batchErrors.length > 0 && (
+            <ul className="entity-list">
+              {batchErrors.map((rowError) => <li key={rowError} className="entity-row">{rowError}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <form className="form-grid" onSubmit={onSubmit}>

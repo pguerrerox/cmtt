@@ -5,12 +5,15 @@ import {
   getSalesManagers,
   updateSalesManager
 } from '../../shared/api/salesManagers.js'
+import { parseBooleanFlag, parseCsvRows } from '../../shared/batchCsv.js'
 
 const initialForm = {
   fullname: '',
   email: '',
   isActive: 1
 }
+
+const BATCH_HELP = 'CSV order: fullname, email, isActive. isActive accepts 1/0, true/false, yes/no.'
 
 export default function AdminSalesManagersTab() {
   const [rows, setRows] = useState([])
@@ -20,6 +23,12 @@ export default function AdminSalesManagersTab() {
   const [form, setForm] = useState(initialForm)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  const [showBatch, setShowBatch] = useState(false)
+  const [showBatchHelp, setShowBatchHelp] = useState(false)
+  const [batchInput, setBatchInput] = useState('')
+  const [batchStatus, setBatchStatus] = useState('')
+  const [batchError, setBatchError] = useState('')
+  const [batchErrors, setBatchErrors] = useState([])
 
   async function loadRows() {
     try {
@@ -60,6 +69,53 @@ export default function AdminSalesManagersTab() {
     }
   }
 
+  async function onBatchImport() {
+    setStatus('')
+    setError('')
+    setBatchStatus('')
+    setBatchError('')
+    setBatchErrors([])
+
+    const rows = parseCsvRows(batchInput)
+    if (rows.length === 0) {
+      setBatchError('Paste at least one CSV row.')
+      return
+    }
+
+    let created = 0
+    const failedRows = []
+
+    for (const row of rows) {
+      const [fullname, email, isActive] = row.values
+      if (!fullname) {
+        failedRows.push(`Row ${row.rowNumber}: fullname is required.`)
+        continue
+      }
+
+      try {
+        await createSalesManager({
+          fullname,
+          email,
+          isActive: parseBooleanFlag(isActive, 1)
+        })
+        created += 1
+      } catch (err) {
+        failedRows.push(`Row ${row.rowNumber}: ${err.message}`)
+      }
+    }
+
+    await loadRows()
+
+    if (failedRows.length > 0) {
+      setBatchError(`Imported ${created} row(s), ${failedRows.length} failed.`)
+      setBatchErrors(failedRows)
+      return
+    }
+
+    setBatchStatus(`Imported ${created} sales manager(s) successfully.`)
+    setBatchInput('')
+  }
+
   function onEdit(row) {
     setEditingId(row.id)
     setShowForm(true)
@@ -87,10 +143,42 @@ export default function AdminSalesManagersTab() {
     <div className="stack gap-lg">
       <div className="panel-header">
         <h3>Sales Managers</h3>
-        <button type="button" onClick={() => setShowForm((prev) => !prev)}>
-          {showForm ? 'Hide Form' : 'Add Sales Manager'}
-        </button>
+        <div className="batch-actions">
+          <button type="button" onClick={() => setShowForm((prev) => !prev)}>
+            {showForm ? 'Hide Form' : 'Add Sales Manager'}
+          </button>
+          <button type="button" className="ghost" onClick={() => setShowBatch((prev) => !prev)}>
+            {showBatch ? 'Hide Batch Insert' : 'Batch Insert'}
+          </button>
+          <button type="button" className="ghost" onClick={() => setShowBatchHelp((prev) => !prev)}>
+            Help
+          </button>
+        </div>
       </div>
+
+      {showBatchHelp && <p className="help-box">{BATCH_HELP}</p>}
+
+      {showBatch && (
+        <div className="panel batch-panel stack gap-md">
+          <label>
+            Paste CSV rows
+            <textarea
+              className="batch-textarea"
+              value={batchInput}
+              onChange={(event) => setBatchInput(event.target.value)}
+              placeholder="Jane Smith,jane.smith@example.com,1"
+            />
+          </label>
+          <button type="button" onClick={onBatchImport}>Import Batch</button>
+          {batchStatus && <p className="success">{batchStatus}</p>}
+          {batchError && <p className="error">{batchError}</p>}
+          {batchErrors.length > 0 && (
+            <ul className="entity-list">
+              {batchErrors.map((rowError) => <li key={rowError} className="entity-row">{rowError}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <form className="form-grid" onSubmit={onSubmit}>

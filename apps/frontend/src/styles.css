@@ -358,6 +358,33 @@ thead th {
   gap: 0.7rem;
 }
 
+.batch-actions {
+  display: inline-flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.help-box {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #d9e7ef;
+  background: #f4f9fc;
+  border-radius: 10px;
+  color: #275068;
+}
+
+.batch-panel {
+  border: 1px solid #d9e7ef;
+  border-radius: 10px;
+  padding: 0.7rem;
+}
+
+.batch-textarea {
+  min-height: 120px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
 .checkbox {
   flex-direction: row;
   align-items: center;

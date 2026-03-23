@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-23
+
+### Added
+- Added batch CSV import workflows in admin tabs for managers, sales managers, and project engineers with per-row validation and import result feedback.
+- Added customer batch CSV import that can create missing customers and linked facilities in a single pass.
+- Added shared CSV parsing and boolean-flag normalization helpers for admin batch tooling.
+
+### Changed
+- Updated admin tab headers with consolidated Add/Batch/Help actions and new inline guidance and batch editor styling.
+
 ## [0.6.1] - 2026-03-19
 
 ### Changed
